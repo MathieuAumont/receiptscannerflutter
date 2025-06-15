@@ -94,6 +94,8 @@ class LanguageProvider extends ChangeNotifier {
     'clear_all_data': 'Effacer toutes les données',
     'about': 'À propos',
     'version': 'Version',
+    'see_all': 'Voir tout',
+    'receipt_details': 'Détails du reçu',
   };
 
   static const Map<String, String> _englishTranslations = {
@@ -141,5 +143,7 @@ class LanguageProvider extends ChangeNotifier {
     'clear_all_data': 'Clear All Data',
     'about': 'About',
     'version': 'Version',
+    'see_all': 'See All',
+    'receipt_details': 'Receipt Details',
   };
 }
