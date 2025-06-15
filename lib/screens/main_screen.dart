@@ -2,10 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:receipt_scanner_flutter/theme/app_theme.dart';
 import 'package:receipt_scanner_flutter/providers/language_provider.dart';
 import 'package:receipt_scanner_flutter/providers/receipt_provider.dart';
 import 'package:receipt_scanner_flutter/providers/budget_provider.dart';
 import 'package:receipt_scanner_flutter/widgets/receipt_card.dart';
+import 'package:receipt_scanner_flutter/widgets/modern_card.dart';
+import 'package:receipt_scanner_flutter/widgets/stat_card.dart';
+import 'package:receipt_scanner_flutter/widgets/animated_fab.dart';
 import 'package:receipt_scanner_flutter/utils/currency_formatter.dart';
 
 class MainScreen extends StatefulWidget {
@@ -15,8 +19,30 @@ class MainScreen extends StatefulWidget {
   State<MainScreen> createState() => _MainScreenState();
 }
 
-class _MainScreenState extends State<MainScreen> {
+class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   int _selectedIndex = 0;
+  late AnimationController _fabAnimationController;
+  late Animation<double> _fabAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _fabAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _fabAnimation = CurvedAnimation(
+      parent: _fabAnimationController,
+      curve: Curves.easeInOut,
+    );
+    _fabAnimationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _fabAnimationController.dispose();
+    super.dispose();
+  }
 
   final List<Widget> _screens = [
     const HomeTab(),
@@ -38,63 +64,82 @@ class _MainScreenState extends State<MainScreen> {
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
+          color: Theme.of(context).cardColor,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 10,
-              offset: const Offset(0, -2),
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 20,
+              offset: const Offset(0, -5),
             ),
           ],
         ),
-        child: BottomNavigationBar(
-          currentIndex: _selectedIndex,
-          onTap: (index) {
-            setState(() {
-              _selectedIndex = index;
-            });
-          },
-          type: BottomNavigationBarType.fixed,
-          selectedItemColor: Theme.of(context).colorScheme.primary,
-          unselectedItemColor: Colors.grey,
-          showSelectedLabels: false,
-          showUnselectedLabels: false,
-          items: [
-            BottomNavigationBarItem(
-              icon: const Icon(LucideIcons.home),
-              label: languageProvider.translate('home'),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppTheme.spacingM,
+              vertical: AppTheme.spacingS,
             ),
-            BottomNavigationBarItem(
-              icon: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primary,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  LucideIcons.camera,
-                  color: Colors.white,
-                  size: 24,
-                ),
-              ),
-              label: languageProvider.translate('scan'),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildNavItem(0, LucideIcons.home, languageProvider.translate('home')),
+                _buildNavItem(1, LucideIcons.camera, languageProvider.translate('scan'), isSpecial: true),
+                _buildNavItem(2, LucideIcons.plus, languageProvider.translate('manual_entry')),
+                _buildNavItem(3, LucideIcons.wallet, languageProvider.translate('budget')),
+                _buildNavItem(4, LucideIcons.barChart3, languageProvider.translate('reports')),
+                _buildNavItem(5, LucideIcons.settings, languageProvider.translate('settings')),
+              ],
             ),
-            BottomNavigationBarItem(
-              icon: const Icon(LucideIcons.plus),
-              label: languageProvider.translate('manual_entry'),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavItem(int index, IconData icon, String label, {bool isSpecial = false}) {
+    final isSelected = _selectedIndex == index;
+    
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedIndex = index;
+        });
+        if (isSpecial) {
+          _fabAnimationController.reset();
+          _fabAnimationController.forward();
+        }
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: EdgeInsets.symmetric(
+          horizontal: isSpecial ? AppTheme.spacingM : AppTheme.spacingS,
+          vertical: AppTheme.spacingS,
+        ),
+        decoration: BoxDecoration(
+          color: isSpecial 
+              ? AppTheme.primaryColor
+              : isSelected 
+                  ? AppTheme.primaryColor.withOpacity(0.1)
+                  : Colors.transparent,
+          borderRadius: BorderRadius.circular(
+            isSpecial ? AppTheme.radiusLarge : AppTheme.radiusSmall,
+          ),
+          boxShadow: isSpecial ? [
+            BoxShadow(
+              color: AppTheme.primaryColor.withOpacity(0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
-            BottomNavigationBarItem(
-              icon: const Icon(LucideIcons.wallet),
-              label: languageProvider.translate('budget'),
-            ),
-            BottomNavigationBarItem(
-              icon: const Icon(LucideIcons.barChart3),
-              label: languageProvider.translate('reports'),
-            ),
-            BottomNavigationBarItem(
-              icon: const Icon(LucideIcons.settings),
-              label: languageProvider.translate('settings'),
-            ),
-          ],
+          ] : null,
+        ),
+        child: Icon(
+          icon,
+          color: isSpecial 
+              ? Colors.white
+              : isSelected 
+                  ? AppTheme.primaryColor
+                  : AppTheme.textTertiary,
+          size: isSpecial ? 28 : 24,
         ),
       ),
     );
@@ -115,160 +160,189 @@ class HomeTab extends StatelessWidget {
     final monthlySpending = receiptProvider.getMonthlySpending();
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(languageProvider.translate('receipt_scanner')),
-        elevation: 0,
-      ),
-      body: RefreshIndicator(
-        onRefresh: () async {
-          await receiptProvider.loadReceipts();
-        },
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Stats Cards
-              Row(
-                children: [
-                  Expanded(
-                    child: Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          children: [
-                            Text(
-                              languageProvider.translate('total_budget'),
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              CurrencyFormatter.format(totalBudget),
-                              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          children: [
-                            Text(
-                              languageProvider.translate('monthly_spending'),
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              CurrencyFormatter.format(monthlySpending),
-                              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              
-              const SizedBox(height: 24),
-              
-              // Recent Receipts Section
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    languageProvider.translate('recent_receipts'),
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      // Navigate to all receipts
-                    },
-                    child: Text(languageProvider.translate('see_all')),
-                  ),
-                ],
-              ),
-              
-              const SizedBox(height: 16),
-              
-              // Receipts List
-              if (receiptProvider.isLoading)
-                const Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(32),
-                    child: CircularProgressIndicator(),
-                  ),
-                )
-              else if (receiptProvider.recentReceipts.isEmpty)
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(32),
-                    child: Column(
-                      children: [
-                        Icon(
-                          LucideIcons.clock,
-                          size: 48,
-                          color: Colors.grey[400],
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          languageProvider.translate('no_receipts'),
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          languageProvider.translate('no_receipts_subtitle'),
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.grey[600],
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
-                  ),
-                )
-              else
-                ...receiptProvider.recentReceipts.map(
-                  (receipt) => ReceiptCard(
-                    receipt: receipt,
-                    onTap: () => context.go('/receipt/${receipt.id}'),
-                  ),
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            expandedHeight: 120,
+            floating: false,
+            pinned: true,
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            flexibleSpace: FlexibleSpaceBar(
+              title: Text(
+                languageProvider.translate('receipt_scanner'),
+                style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: AppTheme.textPrimary,
                 ),
-            ],
+              ),
+              titlePadding: const EdgeInsets.only(
+                left: AppTheme.spacingM,
+                bottom: AppTheme.spacingM,
+              ),
+            ),
           ),
-        ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(AppTheme.spacingM),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Stats Cards
+                  Row(
+                    children: [
+                      Expanded(
+                        child: StatCard(
+                          title: languageProvider.translate('total_budget'),
+                          value: CurrencyFormatter.format(totalBudget),
+                          icon: LucideIcons.target,
+                          iconColor: AppTheme.successColor,
+                          subtitle: 'Ce mois',
+                        ),
+                      ),
+                      const SizedBox(width: AppTheme.spacingM),
+                      Expanded(
+                        child: StatCard(
+                          title: languageProvider.translate('monthly_spending'),
+                          value: CurrencyFormatter.format(monthlySpending),
+                          icon: LucideIcons.trendingUp,
+                          iconColor: AppTheme.warningColor,
+                          subtitle: totalBudget > 0 
+                              ? '${((monthlySpending / totalBudget) * 100).toStringAsFixed(0)}% utilisé'
+                              : null,
+                        ),
+                      ),
+                    ],
+                  ),
+                  
+                  const SizedBox(height: AppTheme.spacingXL),
+                  
+                  // Recent Receipts Section
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        languageProvider.translate('recent_receipts'),
+                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          // Navigate to all receipts
+                        },
+                        child: Text(languageProvider.translate('see_all')),
+                      ),
+                    ],
+                  ),
+                  
+                  const SizedBox(height: AppTheme.spacingM),
+                  
+                  // Receipts List
+                  if (receiptProvider.isLoading)
+                    const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(AppTheme.spacingXXL),
+                        child: CircularProgressIndicator(),
+                      ),
+                    )
+                  else if (receiptProvider.recentReceipts.isEmpty)
+                    ModernCard(
+                      child: Column(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(AppTheme.spacingL),
+                            decoration: BoxDecoration(
+                              color: AppTheme.primaryColor.withOpacity(0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              LucideIcons.receipt,
+                              size: 48,
+                              color: AppTheme.primaryColor,
+                            ),
+                          ),
+                          const SizedBox(height: AppTheme.spacingL),
+                          Text(
+                            languageProvider.translate('no_receipts'),
+                            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: AppTheme.spacingS),
+                          Text(
+                            languageProvider.translate('no_receipts_subtitle'),
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: AppTheme.textSecondary,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: AppTheme.spacingL),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: ElevatedButton.icon(
+                                  onPressed: () => context.go('/scan'),
+                                  icon: const Icon(LucideIcons.camera),
+                                  label: const Text('Scanner'),
+                                ),
+                              ),
+                              const SizedBox(width: AppTheme.spacingM),
+                              Expanded(
+                                child: OutlinedButton.icon(
+                                  onPressed: () => context.go('/manual-entry'),
+                                  icon: const Icon(LucideIcons.plus),
+                                  label: const Text('Ajouter'),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    )
+                  else
+                    ...receiptProvider.recentReceipts.map(
+                      (receipt) => ReceiptCard(
+                        receipt: receipt,
+                        onTap: () => context.go('/receipt/${receipt.id}'),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
-// Placeholder tabs
+// Placeholder tabs avec le nouveau design
 class ScanTab extends StatelessWidget {
   const ScanTab({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Scan')),
-      body: const Center(child: Text('Scan Screen')),
+      body: Center(
+        child: ModernCard(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                LucideIcons.camera,
+                size: 64,
+                color: AppTheme.primaryColor,
+              ),
+              const SizedBox(height: AppTheme.spacingM),
+              Text(
+                'Scanner un reçu',
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -279,8 +353,25 @@ class ManualEntryTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Manual Entry')),
-      body: const Center(child: Text('Manual Entry Screen')),
+      body: Center(
+        child: ModernCard(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                LucideIcons.plus,
+                size: 64,
+                color: AppTheme.primaryColor,
+              ),
+              const SizedBox(height: AppTheme.spacingM),
+              Text(
+                'Ajouter manuellement',
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -291,8 +382,25 @@ class BudgetTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Budget')),
-      body: const Center(child: Text('Budget Screen')),
+      body: Center(
+        child: ModernCard(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                LucideIcons.wallet,
+                size: 64,
+                color: AppTheme.primaryColor,
+              ),
+              const SizedBox(height: AppTheme.spacingM),
+              Text(
+                'Gérer le budget',
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -303,8 +411,25 @@ class ReportsTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Reports')),
-      body: const Center(child: Text('Reports Screen')),
+      body: Center(
+        child: ModernCard(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                LucideIcons.barChart3,
+                size: 64,
+                color: AppTheme.primaryColor,
+              ),
+              const SizedBox(height: AppTheme.spacingM),
+              Text(
+                'Voir les rapports',
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -315,8 +440,25 @@ class SettingsTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
-      body: const Center(child: Text('Settings Screen')),
+      body: Center(
+        child: ModernCard(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                LucideIcons.settings,
+                size: 64,
+                color: AppTheme.primaryColor,
+              ),
+              const SizedBox(height: AppTheme.spacingM),
+              Text(
+                'Paramètres',
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

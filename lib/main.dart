@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
+import 'package:receipt_scanner_flutter/theme/app_theme.dart';
 import 'package:receipt_scanner_flutter/providers/theme_provider.dart';
 import 'package:receipt_scanner_flutter/providers/language_provider.dart';
 import 'package:receipt_scanner_flutter/providers/receipt_provider.dart';
@@ -35,8 +36,8 @@ class MyApp extends StatelessWidget {
           return MaterialApp.router(
             title: 'Receipt Scanner',
             debugShowCheckedModeBanner: false,
-            theme: themeProvider.lightTheme,
-            darkTheme: themeProvider.darkTheme,
+            theme: AppTheme.lightTheme,
+            darkTheme: AppTheme.darkTheme,
             themeMode: themeProvider.themeMode,
             locale: languageProvider.locale,
             routerConfig: _router,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:receipt_scanner_flutter/theme/app_theme.dart';
 
 class ThemeProvider extends ChangeNotifier {
   static const String _themeKey = 'theme_mode';
@@ -10,59 +11,8 @@ class ThemeProvider extends ChangeNotifier {
   
   bool get isDarkMode => _themeMode == ThemeMode.dark;
 
-  ThemeData get lightTheme => ThemeData(
-    useMaterial3: true,
-    colorScheme: ColorScheme.fromSeed(
-      seedColor: const Color(0xFF007AFF),
-      brightness: Brightness.light,
-    ),
-    appBarTheme: const AppBarTheme(
-      backgroundColor: Colors.white,
-      foregroundColor: Colors.black,
-      elevation: 0,
-    ),
-    cardTheme: CardTheme(
-      color: Colors.white,
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-    ),
-    elevatedButtonTheme: ElevatedButtonThemeData(
-      style: ElevatedButton.styleFrom(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-      ),
-    ),
-  );
-
-  ThemeData get darkTheme => ThemeData(
-    useMaterial3: true,
-    colorScheme: ColorScheme.fromSeed(
-      seedColor: const Color(0xFF0A84FF),
-      brightness: Brightness.dark,
-    ),
-    appBarTheme: const AppBarTheme(
-      backgroundColor: Color(0xFF1C1C1E),
-      foregroundColor: Colors.white,
-      elevation: 0,
-    ),
-    cardTheme: CardTheme(
-      color: const Color(0xFF1C1C1E),
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-    ),
-    elevatedButtonTheme: ElevatedButtonThemeData(
-      style: ElevatedButton.styleFrom(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-      ),
-    ),
-  );
+  ThemeData get lightTheme => AppTheme.lightTheme;
+  ThemeData get darkTheme => AppTheme.darkTheme;
 
   ThemeProvider() {
     _loadTheme();
