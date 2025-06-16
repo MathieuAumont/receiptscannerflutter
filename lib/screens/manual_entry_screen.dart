@@ -16,7 +16,6 @@ class ManualEntryScreen extends StatefulWidget {
 }
 
 class _ManualEntryScreenState extends State<ManualEntryScreen> {
-  final _formKey = GlobalKey<FormState>();
   final _companyController = TextEditingController();
   final _notesController = TextEditingController();
   
@@ -86,19 +85,19 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
   }
 
   Future<void> _saveReceipt() async {
-    if (!_formKey.currentState!.validate()) return;
-    
     final validItems = _items.where((item) => 
       item.nameController.text.isNotEmpty && 
       (double.tryParse(item.priceController.text) ?? 0.0) > 0
     ).toList();
     
     if (validItems.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please add at least one item with a name and price'),
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please add at least one item with a name and price'),
+          ),
+        );
+      }
       return;
     }
 
@@ -142,16 +141,18 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
         ),
       );
 
-      await Provider.of<ReceiptProvider>(context, listen: false).addReceipt(receipt);
-      
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Receipt saved successfully!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        context.go('/');
+        await Provider.of<ReceiptProvider>(context, listen: false).addReceipt(receipt);
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Receipt saved successfully!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          context.go('/');
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -184,295 +185,289 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
           onPressed: () => context.go('/'),
         ),
       ),
-      body: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppTheme.spacingM),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // General Information
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(AppTheme.spacingM),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'General Information',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(AppTheme.spacingM),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // General Information
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(AppTheme.spacingM),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'General Information',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
                       ),
-                      const SizedBox(height: AppTheme.spacingM),
-                      
-                      // Date Picker
-                      ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        leading: const Icon(Icons.calendar_today),
-                        title: Text(languageProvider.translate('date')),
-                        subtitle: Text(
-                          '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
-                        ),
-                        onTap: () async {
-                          final date = await showDatePicker(
-                            context: context,
-                            initialDate: _selectedDate,
-                            firstDate: DateTime(2020),
-                            lastDate: DateTime.now(),
-                          );
-                          if (date != null) {
-                            setState(() {
-                              _selectedDate = date;
-                            });
-                          }
-                        },
+                    ),
+                    const SizedBox(height: AppTheme.spacingM),
+                    
+                    // Date Picker
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.calendar_today),
+                      title: Text(languageProvider.translate('date')),
+                      subtitle: Text(
+                        '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
                       ),
-                      
-                      const SizedBox(height: AppTheme.spacingM),
-                      
-                      // Store Name
-                      TextFormField(
-                        controller: _companyController,
-                        decoration: InputDecoration(
-                          labelText: languageProvider.translate('store_name'),
-                          prefixIcon: const Icon(Icons.store),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Please enter the store name';
-                          }
-                          return null;
-                        },
+                      onTap: () async {
+                        final date = await showDatePicker(
+                          context: context,
+                          initialDate: _selectedDate,
+                          firstDate: DateTime(2020),
+                          lastDate: DateTime.now(),
+                        );
+                        if (date != null && mounted) {
+                          setState(() {
+                            _selectedDate = date;
+                          });
+                        }
+                      },
+                    ),
+                    
+                    const SizedBox(height: AppTheme.spacingM),
+                    
+                    // Store Name
+                    TextFormField(
+                      controller: _companyController,
+                      decoration: InputDecoration(
+                        labelText: languageProvider.translate('store_name'),
+                        prefixIcon: const Icon(Icons.store),
                       ),
-                      
-                      const SizedBox(height: AppTheme.spacingM),
-                      
-                      // Category Selection
-                      Text(
-                        languageProvider.translate('category'),
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      const SizedBox(height: AppTheme.spacingS),
-                      Wrap(
-                        spacing: AppTheme.spacingS,
-                        children: categories.map((category) {
-                          final isSelected = _selectedCategory == category.id;
-                          
-                          return FilterChip(
-                            selected: isSelected,
-                            label: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(category.icon),
-                                const SizedBox(width: 4),
-                                Text(category.name),
-                              ],
-                            ),
-                            onSelected: (selected) {
+                    ),
+                    
+                    const SizedBox(height: AppTheme.spacingM),
+                    
+                    // Category Selection
+                    Text(
+                      languageProvider.translate('category'),
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: AppTheme.spacingS),
+                    Wrap(
+                      spacing: AppTheme.spacingS,
+                      children: categories.map((category) {
+                        final isSelected = _selectedCategory == category.id;
+                        
+                        return FilterChip(
+                          selected: isSelected,
+                          label: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(category.icon),
+                              const SizedBox(width: 4),
+                              Text(category.name),
+                            ],
+                          ),
+                          onSelected: (selected) {
+                            if (mounted) {
                               setState(() {
                                 _selectedCategory = category.id;
                               });
-                            },
-                            selectedColor: category.color.withOpacity(0.3),
-                            checkmarkColor: category.color,
-                          );
-                        }).toList(),
-                      ),
-                    ],
-                  ),
+                            }
+                          },
+                          selectedColor: category.color.withOpacity(0.3),
+                          checkmarkColor: category.color,
+                        );
+                      }).toList(),
+                    ),
+                  ],
                 ),
               ),
-              
-              const SizedBox(height: AppTheme.spacingM),
-              
-              // Items Section
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(AppTheme.spacingM),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            languageProvider.translate('items'),
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
+            ),
+            
+            const SizedBox(height: AppTheme.spacingM),
+            
+            // Items Section
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(AppTheme.spacingM),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          languageProvider.translate('items'),
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w700,
                           ),
-                          TextButton.icon(
-                            onPressed: _addItem,
-                            icon: const Icon(Icons.add),
-                            label: Text(languageProvider.translate('add_item')),
-                          ),
-                        ],
-                      ),
-                      
-                      const SizedBox(height: AppTheme.spacingM),
-                      
-                      // Tax Toggle
-                      SwitchListTile(
-                        contentPadding: EdgeInsets.zero,
-                        title: const Text('Prices include tax'),
-                        value: _pricesIncludeTax,
-                        onChanged: (value) {
+                        ),
+                        TextButton.icon(
+                          onPressed: _addItem,
+                          icon: const Icon(Icons.add),
+                          label: Text(languageProvider.translate('add_item')),
+                        ),
+                      ],
+                    ),
+                    
+                    const SizedBox(height: AppTheme.spacingM),
+                    
+                    // Tax Toggle
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Prices include tax'),
+                      value: _pricesIncludeTax,
+                      onChanged: (value) {
+                        if (mounted) {
                           setState(() {
                             _pricesIncludeTax = value;
                           });
-                        },
-                      ),
-                      
-                      const SizedBox(height: AppTheme.spacingM),
-                      
-                      // Items List
-                      ..._items.asMap().entries.map((entry) {
-                        final index = entry.key;
-                        final item = entry.value;
-                        
-                        return Container(
-                          key: ValueKey('item_entry_$index'),
-                          margin: const EdgeInsets.only(bottom: AppTheme.spacingM),
-                          child: Row(
-                            children: [
-                              // Item Name
-                              Expanded(
-                                flex: 2,
-                                child: TextFormField(
-                                  controller: item.nameController,
-                                  decoration: InputDecoration(
-                                    labelText: languageProvider.translate('item_name'),
-                                  ),
-                                ),
-                              ),
-                              
-                              const SizedBox(width: AppTheme.spacingS),
-                              
-                              // Price
-                              Expanded(
-                                child: TextFormField(
-                                  controller: item.priceController,
-                                  decoration: InputDecoration(
-                                    labelText: languageProvider.translate('price'),
-                                    prefixText: '\$',
-                                  ),
-                                  keyboardType: TextInputType.number,
-                                ),
-                              ),
-                              
-                              const SizedBox(width: AppTheme.spacingS),
-                              
-                              // Quantity
-                              SizedBox(
-                                width: 60,
-                                child: TextFormField(
-                                  controller: item.quantityController,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Qty',
-                                  ),
-                                  keyboardType: TextInputType.number,
-                                ),
-                              ),
-                              
-                              // Remove Button
-                              if (_items.length > 1)
-                                IconButton(
-                                  onPressed: () => _removeItem(index),
-                                  icon: Icon(
-                                    Icons.delete,
-                                    color: AppTheme.errorColor,
-                                  ),
-                                ),
-                            ],
-                          ),
-                        );
-                      }),
-                    ],
-                  ),
-                ),
-              ),
-              
-              const SizedBox(height: AppTheme.spacingM),
-              
-              // Summary Section
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(AppTheme.spacingM),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Summary',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: AppTheme.spacingM),
-                      
-                      _buildSummaryRow(
-                        languageProvider.translate('subtotal'),
-                        CurrencyFormatter.format(_calculateSubtotal()),
-                      ),
-                      _buildSummaryRow(
-                        languageProvider.translate('tps'),
-                        CurrencyFormatter.format(_calculateTPS()),
-                      ),
-                      _buildSummaryRow(
-                        languageProvider.translate('tvq'),
-                        CurrencyFormatter.format(_calculateTVQ()),
-                      ),
-                      const Divider(),
-                      _buildSummaryRow(
-                        languageProvider.translate('total'),
-                        CurrencyFormatter.format(_calculateTotal()),
-                        isTotal: true,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              
-              const SizedBox(height: AppTheme.spacingM),
-              
-              // Notes Section
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(AppTheme.spacingM),
-                  child: TextFormField(
-                    controller: _notesController,
-                    decoration: const InputDecoration(
-                      labelText: 'Notes (optional)',
-                      alignLabelWithHint: true,
-                      border: InputBorder.none,
+                        }
+                      },
                     ),
-                    maxLines: 3,
-                  ),
-                ),
-              ),
-              
-              const SizedBox(height: AppTheme.spacingXL),
-              
-              // Save Button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _isLoading ? null : _saveReceipt,
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.all(AppTheme.spacingM),
-                  ),
-                  child: _isLoading
-                      ? const CircularProgressIndicator()
-                      : Text(
-                          languageProvider.translate('save'),
-                          style: const TextStyle(fontSize: 16),
+                    
+                    const SizedBox(height: AppTheme.spacingM),
+                    
+                    // Items List
+                    ..._items.asMap().entries.map((entry) {
+                      final index = entry.key;
+                      final item = entry.value;
+                      
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: AppTheme.spacingM),
+                        child: Row(
+                          children: [
+                            // Item Name
+                            Expanded(
+                              flex: 2,
+                              child: TextFormField(
+                                controller: item.nameController,
+                                decoration: InputDecoration(
+                                  labelText: languageProvider.translate('item_name'),
+                                ),
+                              ),
+                            ),
+                            
+                            const SizedBox(width: AppTheme.spacingS),
+                            
+                            // Price
+                            Expanded(
+                              child: TextFormField(
+                                controller: item.priceController,
+                                decoration: InputDecoration(
+                                  labelText: languageProvider.translate('price'),
+                                  prefixText: '\$',
+                                ),
+                                keyboardType: TextInputType.number,
+                              ),
+                            ),
+                            
+                            const SizedBox(width: AppTheme.spacingS),
+                            
+                            // Quantity
+                            SizedBox(
+                              width: 60,
+                              child: TextFormField(
+                                controller: item.quantityController,
+                                decoration: const InputDecoration(
+                                  labelText: 'Qty',
+                                ),
+                                keyboardType: TextInputType.number,
+                              ),
+                            ),
+                            
+                            // Remove Button
+                            if (_items.length > 1)
+                              IconButton(
+                                onPressed: () => _removeItem(index),
+                                icon: Icon(
+                                  Icons.delete,
+                                  color: AppTheme.errorColor,
+                                ),
+                              ),
+                          ],
                         ),
+                      );
+                    }),
+                  ],
                 ),
               ),
-              
-              const SizedBox(height: AppTheme.spacingXXL),
-            ],
-          ),
+            ),
+            
+            const SizedBox(height: AppTheme.spacingM),
+            
+            // Summary Section
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(AppTheme.spacingM),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Summary',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: AppTheme.spacingM),
+                    
+                    _buildSummaryRow(
+                      languageProvider.translate('subtotal'),
+                      CurrencyFormatter.format(_calculateSubtotal()),
+                    ),
+                    _buildSummaryRow(
+                      languageProvider.translate('tps'),
+                      CurrencyFormatter.format(_calculateTPS()),
+                    ),
+                    _buildSummaryRow(
+                      languageProvider.translate('tvq'),
+                      CurrencyFormatter.format(_calculateTVQ()),
+                    ),
+                    const Divider(),
+                    _buildSummaryRow(
+                      languageProvider.translate('total'),
+                      CurrencyFormatter.format(_calculateTotal()),
+                      isTotal: true,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            
+            const SizedBox(height: AppTheme.spacingM),
+            
+            // Notes Section
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(AppTheme.spacingM),
+                child: TextFormField(
+                  controller: _notesController,
+                  decoration: const InputDecoration(
+                    labelText: 'Notes (optional)',
+                    alignLabelWithHint: true,
+                    border: InputBorder.none,
+                  ),
+                  maxLines: 3,
+                ),
+              ),
+            ),
+            
+            const SizedBox(height: AppTheme.spacingXL),
+            
+            // Save Button
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _isLoading ? null : _saveReceipt,
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.all(AppTheme.spacingM),
+                ),
+                child: _isLoading
+                    ? const CircularProgressIndicator()
+                    : Text(
+                        languageProvider.translate('save'),
+                        style: const TextStyle(fontSize: 16),
+                      ),
+              ),
+            ),
+            
+            const SizedBox(height: AppTheme.spacingXXL),
+          ],
         ),
       ),
     );

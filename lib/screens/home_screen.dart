@@ -154,15 +154,14 @@ class HomeScreen extends StatelessWidget {
         final receipt = entry.value;
         
         return Container(
-          key: ValueKey('receipt_${receipt.id}_$index'),
           margin: const EdgeInsets.only(bottom: AppTheme.spacingM),
-          child: _buildReceiptCard(receipt),
+          child: _buildReceiptCard(receipt, index),
         );
       }).toList(),
     );
   }
 
-  Widget _buildReceiptCard(receipt) {
+  Widget _buildReceiptCard(receipt, int index) {
     return Builder(
       builder: (context) {
         return GestureDetector(
