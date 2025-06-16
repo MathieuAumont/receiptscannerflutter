@@ -25,8 +25,9 @@ class HomeScreen extends StatelessWidget {
     final totalBudget = budgetProvider.getTotalBudgetForMonth(currentMonthKey);
     final monthlySpending = receiptProvider.getMonthlySpending();
 
+    // Créer une liste unique de reçus pour éviter les doublons
     final uniqueReceipts = <String, Receipt>{};
-    for (var receipt in receiptProvider.recentReceipts.cast<Receipt>()) {
+    for (var receipt in receiptProvider.recentReceipts) {
       uniqueReceipts[receipt.id] = receipt;
     }
 
@@ -100,7 +101,6 @@ class HomeScreen extends StatelessWidget {
                           icon: '📷',
                           color: const Color(0xFF6366F1),
                           onTap: () => context.go('/scan'),
-                          key: const ValueKey('quickaction_scan'),
                         ),
                       ),
                       const SizedBox(width: AppTheme.spacingM),
@@ -111,7 +111,6 @@ class HomeScreen extends StatelessWidget {
                           icon: '➕',
                           color: const Color(0xFFEC4899),
                           onTap: () => context.go('/manual-entry'),
-                          key: const ValueKey('quickaction_add'),
                         ),
                       ),
                     ],
@@ -146,15 +145,17 @@ class HomeScreen extends StatelessWidget {
                         child: CircularProgressIndicator(),
                       ),
                     )
-                  else if (receiptProvider.recentReceipts.isEmpty)
+                  else if (uniqueReceipts.isEmpty)
                     _buildEmptyState(context, languageProvider)
                   else
-                    ...uniqueReceipts.values.map(
-                      (receipt) => ReceiptCard(
-                        key: ValueKey(receipt.id),
-                        receipt: receipt,
-                        onTap: () => context.go('/receipt/${receipt.id}'),
-                      ),
+                    Column(
+                      children: uniqueReceipts.values.map(
+                        (receipt) => ReceiptCard(
+                          key: ValueKey('receipt_${receipt.id}'),
+                          receipt: receipt,
+                          onTap: () => context.go('/receipt/${receipt.id}'),
+                        ),
+                      ).toList(),
                     ),
                 ],
               ),
@@ -255,12 +256,10 @@ class HomeScreen extends StatelessWidget {
     required String icon,
     required Color color,
     required VoidCallback onTap,
-    Key? key,
   }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        key: key,
         padding: const EdgeInsets.all(AppTheme.spacingM),
         decoration: BoxDecoration(
           gradient: LinearGradient(

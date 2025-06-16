@@ -71,43 +71,70 @@ final GoRouter _router = GoRouter(
       routes: [
         GoRoute(
           path: '/',
-          builder: (context, state) => const HomeScreen(),
+          pageBuilder: (context, state) => NoTransitionPage(
+            key: state.pageKey,
+            child: const HomeScreen(),
+          ),
         ),
         GoRoute(
           path: '/scan',
-          builder: (context, state) => const ScanScreen(),
+          pageBuilder: (context, state) => NoTransitionPage(
+            key: state.pageKey,
+            child: const ScanScreen(),
+          ),
         ),
         GoRoute(
           path: '/manual-entry',
-          builder: (context, state) => const ManualEntryScreen(),
+          pageBuilder: (context, state) => NoTransitionPage(
+            key: state.pageKey,
+            child: const ManualEntryScreen(),
+          ),
         ),
         GoRoute(
           path: '/budget',
-          builder: (context, state) => const BudgetScreen(),
+          pageBuilder: (context, state) => NoTransitionPage(
+            key: state.pageKey,
+            child: const BudgetScreen(),
+          ),
         ),
         GoRoute(
           path: '/reports',
-          builder: (context, state) => const ReportsScreen(),
+          pageBuilder: (context, state) => NoTransitionPage(
+            key: state.pageKey,
+            child: const ReportsScreen(),
+          ),
         ),
         GoRoute(
           path: '/settings',
-          builder: (context, state) => const SettingsScreen(),
+          pageBuilder: (context, state) => NoTransitionPage(
+            key: state.pageKey,
+            child: const SettingsScreen(),
+          ),
         ),
       ],
     ),
     GoRoute(
       path: '/receipt/:id',
-      builder: (context, state) => ReceiptDetailsScreen(
-        receiptId: state.pathParameters['id']!,
+      pageBuilder: (context, state) => NoTransitionPage(
+        key: state.pageKey,
+        child: ReceiptDetailsScreen(
+          receiptId: state.pathParameters['id']!,
+        ),
       ),
     ),
     GoRoute(
       path: '/analysis',
-      builder: (context, state) => const AnalysisScreen(),
+      pageBuilder: (context, state) => NoTransitionPage(
+        key: state.pageKey,
+        child: const AnalysisScreen(),
+      ),
     ),
     GoRoute(
       path: '/custom-report',
-      builder: (context, state) => const CustomReportScreen(),
+      pageBuilder: (context, state) => NoTransitionPage(
+        key: state.pageKey,
+        child: const CustomReportScreen(),
+      ),
     ),
   ],
 );
