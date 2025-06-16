@@ -4,12 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:receipt_scanner_flutter/theme/app_theme.dart';
 import 'package:receipt_scanner_flutter/providers/language_provider.dart';
-import 'package:receipt_scanner_flutter/screens/home_screen.dart';
-import 'package:receipt_scanner_flutter/screens/scan_screen.dart';
-import 'package:receipt_scanner_flutter/screens/manual_entry_screen.dart';
-import 'package:receipt_scanner_flutter/screens/budget_screen.dart';
-import 'package:receipt_scanner_flutter/screens/reports_screen.dart';
-import 'package:receipt_scanner_flutter/screens/settings_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   final Widget child;
@@ -50,30 +44,35 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
 
   void _updateSelectedIndexFromRoute() {
     final location = GoRouterState.of(context).uri.path;
-    setState(() {
-      switch (location) {
-        case '/':
-          _selectedIndex = 0;
-          break;
-        case '/scan':
-          _selectedIndex = 1;
-          break;
-        case '/manual-entry':
-          _selectedIndex = 2;
-          break;
-        case '/budget':
-          _selectedIndex = 3;
-          break;
-        case '/reports':
-          _selectedIndex = 4;
-          break;
-        case '/settings':
-          _selectedIndex = 5;
-          break;
-        default:
-          _selectedIndex = 0;
-      }
-    });
+    int newIndex = 0;
+    switch (location) {
+      case '/':
+        newIndex = 0;
+        break;
+      case '/scan':
+        newIndex = 1;
+        break;
+      case '/manual-entry':
+        newIndex = 2;
+        break;
+      case '/budget':
+        newIndex = 3;
+        break;
+      case '/reports':
+        newIndex = 4;
+        break;
+      case '/settings':
+        newIndex = 5;
+        break;
+      default:
+        newIndex = 0;
+    }
+    
+    if (mounted && _selectedIndex != newIndex) {
+      setState(() {
+        _selectedIndex = newIndex;
+      });
+    }
   }
 
   @override
