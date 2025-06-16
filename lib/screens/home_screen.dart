@@ -13,137 +13,234 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // --- DÉBUT DU COMMENTAIRE DU CONTENU ORIGINAL ---
+    /*
     final languageProvider = Provider.of<LanguageProvider>(context);
     final receiptProvider = Provider.of<ReceiptProvider>(context);
     final budgetProvider = Provider.of<BudgetProvider>(context);
-
     final currentMonthKey = budgetProvider.getCurrentMonthKey();
     final totalBudget = budgetProvider.getTotalBudgetForMonth(currentMonthKey);
     final monthlySpending = receiptProvider.getMonthlySpending();
-
+    // ... tout le contenu original ...
+    */
+    // --- FIN DU COMMENTAIRE DU CONTENU ORIGINAL ---
+    final budgetProvider = Provider.of<BudgetProvider>(context);
+    final receiptProvider = Provider.of<ReceiptProvider>(context);
+    final currentMonthKey = budgetProvider.getCurrentMonthKey();
+    final totalBudget = budgetProvider.getTotalBudgetForMonth(currentMonthKey);
+    final monthlySpending = receiptProvider.getMonthlySpending();
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            expandedHeight: 120,
-            floating: false,
-            pinned: true,
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            flexibleSpace: FlexibleSpaceBar(
-              title: Text(
-                languageProvider.translate('receipt_scanner'),
-                style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  color: AppTheme.textPrimary,
+      appBar: AppBar(title: Text('Receipt Scanner')),
+      body: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildStatCard(
+                    context,
+                    title: 'Budget',
+                    value: totalBudget.toStringAsFixed(2),
+                    icon: '💰',
+                    color: const Color(0xFF10B981),
+                    subtitle: 'Ce mois',
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: _buildStatCard(
+                    context,
+                    title: 'Dépensé',
+                    value: monthlySpending.toStringAsFixed(2),
+                    icon: '📊',
+                    color: const Color(0xFFF59E0B),
+                    subtitle: totalBudget > 0 ? '${((monthlySpending / totalBudget) * 100).toStringAsFixed(0)}%' : null,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 32),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Recent Receipts',
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () {}, // à remplacer par la navigation vers les rapports
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+                    child: Text(
+                      'See all',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.primary,
+                        fontWeight: FontWeight.bold,
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            if (receiptProvider.recentReceipts.isEmpty)
+              Text('Aucun reçu récent'),
+            ...receiptProvider.recentReceipts.map((receipt) =>
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () {
+                    // Navigation vers les détails du reçu
+                    Navigator.of(context).pushNamed(
+                      '/receipt/${receipt.id}',
+                    );
+                  },
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                  child: Container(
+                    key: ValueKey('receipt_${receipt.id}'),
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.all(AppTheme.spacingM),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).brightness == Brightness.dark 
+                          ? const Color(0xFF1F2937) 
+                          : AppTheme.cardColor,
+                      borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.08),
+                          blurRadius: 20,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 56,
+                          height: 56,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                CategoryService.getDefaultCategories().firstWhere(
+                                  (cat) => cat.id == receipt.category,
+                                  orElse: () => CategoryService.getDefaultCategories().first,
+                                ).color,
+                                CategoryService.getDefaultCategories().firstWhere(
+                                  (cat) => cat.id == receipt.category,
+                                  orElse: () => CategoryService.getDefaultCategories().first,
+                                ).color.withOpacity(0.7),
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                          ),
+                          child: Center(
+                            child: Text(
+                              CategoryService.getDefaultCategories().firstWhere(
+                                (cat) => cat.id == receipt.category,
+                                orElse: () => CategoryService.getDefaultCategories().first,
+                              ).icon,
+                              style: const TextStyle(fontSize: 24),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: AppTheme.spacingM),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                receipt.company,
+                                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: AppTheme.spacingXS),
+                              Text(
+                                '${receipt.date.day}/${receipt.date.month}/${receipt.date.year}',
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: AppTheme.textSecondary,
+                                ),
+                              ),
+                              const SizedBox(height: AppTheme.spacingXS),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: AppTheme.spacingS,
+                                  vertical: AppTheme.spacingXS,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: CategoryService.getDefaultCategories().firstWhere(
+                                    (cat) => cat.id == receipt.category,
+                                    orElse: () => CategoryService.getDefaultCategories().first,
+                                  ).color.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                                  border: Border.all(
+                                    color: CategoryService.getDefaultCategories().firstWhere(
+                                      (cat) => cat.id == receipt.category,
+                                      orElse: () => CategoryService.getDefaultCategories().first,
+                                    ).color.withOpacity(0.3),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Text(
+                                  CategoryService.getDefaultCategories().firstWhere(
+                                    (cat) => cat.id == receipt.category,
+                                    orElse: () => CategoryService.getDefaultCategories().first,
+                                  ).name,
+                                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                    color: CategoryService.getDefaultCategories().firstWhere(
+                                      (cat) => cat.id == receipt.category,
+                                      orElse: () => CategoryService.getDefaultCategories().first,
+                                    ).color,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              CurrencyFormatter.format(receipt.totalAmount),
+                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: AppTheme.primaryColor,
+                              ),
+                            ),
+                            const SizedBox(height: AppTheme.spacingXS),
+                            Container(
+                              padding: const EdgeInsets.all(AppTheme.spacingXS),
+                              decoration: BoxDecoration(
+                                color: AppTheme.primaryColor.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                              ),
+                              child: Icon(
+                                Icons.arrow_forward_ios,
+                                size: 16,
+                                color: AppTheme.primaryColor,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
-              titlePadding: const EdgeInsets.only(
-                left: AppTheme.spacingM,
-                bottom: AppTheme.spacingM,
-              ),
             ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(AppTheme.spacingM),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Stats Cards
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildStatCard(
-                          context,
-                          title: 'Budget',
-                          value: CurrencyFormatter.format(totalBudget),
-                          icon: '💰',
-                          color: const Color(0xFF10B981),
-                          subtitle: 'Ce mois',
-                        ),
-                      ),
-                      const SizedBox(width: AppTheme.spacingM),
-                      Expanded(
-                        child: _buildStatCard(
-                          context,
-                          title: 'Dépensé',
-                          value: CurrencyFormatter.format(monthlySpending),
-                          icon: '📊',
-                          color: const Color(0xFFF59E0B),
-                          subtitle: totalBudget > 0 
-                              ? '${((monthlySpending / totalBudget) * 100).toStringAsFixed(0)}%'
-                              : null,
-                        ),
-                      ),
-                    ],
-                  ),
-                  
-                  const SizedBox(height: AppTheme.spacingXL),
-                  
-                  // Actions rapides
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildQuickAction(
-                          context,
-                          title: 'Scanner',
-                          icon: '📷',
-                          color: const Color(0xFF6366F1),
-                          onTap: () => context.go('/scan'),
-                        ),
-                      ),
-                      const SizedBox(width: AppTheme.spacingM),
-                      Expanded(
-                        child: _buildQuickAction(
-                          context,
-                          title: 'Ajouter',
-                          icon: '➕',
-                          color: const Color(0xFFEC4899),
-                          onTap: () => context.go('/manual-entry'),
-                        ),
-                      ),
-                    ],
-                  ),
-                  
-                  const SizedBox(height: AppTheme.spacingXL),
-                  
-                  // Recent Receipts Section
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        languageProvider.translate('recent_receipts'),
-                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () => context.go('/reports'),
-                        child: Text(languageProvider.translate('see_all')),
-                      ),
-                    ],
-                  ),
-                  
-                  const SizedBox(height: AppTheme.spacingM),
-                  
-                  // Receipts List
-                  if (receiptProvider.isLoading)
-                    const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(AppTheme.spacingXXL),
-                        child: CircularProgressIndicator(),
-                      ),
-                    )
-                  else if (receiptProvider.recentReceipts.isEmpty)
-                    _buildEmptyState(context, languageProvider)
-                  else
-                    _buildReceiptsList(receiptProvider),
-                ],
-              ),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
