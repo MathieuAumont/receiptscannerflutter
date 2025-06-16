@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
@@ -165,8 +167,6 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // --- DÉBUT DU COMMENTAIRE DU CONTENU ORIGINAL ---
-    /*
     final languageProvider = Provider.of<LanguageProvider>(context);
     final categories = CategoryService.getDefaultCategories();
 
@@ -344,6 +344,7 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
                             Expanded(
                               flex: 2,
                               child: TextFormField(
+                                key: ValueKey('item_name_$index'),
                                 initialValue: _items[index].name,
                                 decoration: InputDecoration(
                                   labelText: languageProvider.translate('item_name'),
@@ -366,6 +367,7 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
                             // Price
                             Expanded(
                               child: TextFormField(
+                                key: ValueKey('item_price_$index'),
                                 initialValue: _items[index].price == 0 ? '' : _items[index].price.toString(),
                                 decoration: InputDecoration(
                                   labelText: languageProvider.translate('price'),
@@ -391,6 +393,7 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
                             SizedBox(
                               width: 60,
                               child: TextFormField(
+                                key: ValueKey('item_quantity_$index'),
                                 initialValue: _items[index].quantity.toString(),
                                 decoration: const InputDecoration(
                                   labelText: 'Qty',
@@ -502,12 +505,6 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
           ),
         ),
       ),
-    );
-    */
-    // --- FIN DU COMMENTAIRE DU CONTENU ORIGINAL ---
-    return Scaffold(
-      appBar: AppBar(title: Text('Test')), 
-      body: Center(child: Text('Page test')), 
     );
   }
 
