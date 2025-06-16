@@ -120,7 +120,7 @@ class AppTheme {
         size: 24,
       ),
     ),
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       color: cardColor,
       elevation: 0,
       shadowColor: Colors.transparent,
@@ -227,7 +227,7 @@ class AppTheme {
       showSelectedLabels: false,
       showUnselectedLabels: false,
     ),
-    tabBarTheme: TabBarTheme(
+    tabBarTheme: TabBarThemeData(
       labelColor: primaryColor,
       unselectedLabelColor: textSecondary,
       indicatorColor: primaryColor,
@@ -360,7 +360,7 @@ class AppTheme {
         size: 24,
       ),
     ),
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       color: const Color(0xFF1F2937),
       elevation: 0,
       shadowColor: Colors.transparent,
