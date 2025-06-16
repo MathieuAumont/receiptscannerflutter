@@ -35,43 +35,56 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
       curve: Curves.easeInOut,
     );
     _fabAnimationController.forward();
+  }
 
-    // Déterminer l'index basé sur la route actuelle
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Mise à jour sécurisée de l'index basé sur la route actuelle
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _updateSelectedIndexFromRoute();
+      if (mounted) {
+        _updateSelectedIndexFromRoute();
+      }
     });
   }
 
   void _updateSelectedIndexFromRoute() {
-    final location = GoRouterState.of(context).uri.path;
-    int newIndex = 0;
-    switch (location) {
-      case '/':
-        newIndex = 0;
-        break;
-      case '/scan':
-        newIndex = 1;
-        break;
-      case '/manual-entry':
-        newIndex = 2;
-        break;
-      case '/budget':
-        newIndex = 3;
-        break;
-      case '/reports':
-        newIndex = 4;
-        break;
-      case '/settings':
-        newIndex = 5;
-        break;
-      default:
-        newIndex = 0;
-    }
+    if (!mounted) return;
     
-    if (mounted && _selectedIndex != newIndex) {
-      setState(() {
-        _selectedIndex = newIndex;
-      });
+    try {
+      final location = GoRouter.of(context).routerDelegate.currentConfiguration.uri.path;
+      int newIndex = 0;
+      switch (location) {
+        case '/':
+          newIndex = 0;
+          break;
+        case '/scan':
+          newIndex = 1;
+          break;
+        case '/manual-entry':
+          newIndex = 2;
+          break;
+        case '/budget':
+          newIndex = 3;
+          break;
+        case '/reports':
+          newIndex = 4;
+          break;
+        case '/settings':
+          newIndex = 5;
+          break;
+        default:
+          newIndex = 0;
+      }
+      
+      if (mounted && _selectedIndex != newIndex) {
+        setState(() {
+          _selectedIndex = newIndex;
+        });
+      }
+    } catch (e) {
+      // En cas d'erreur, rester sur l'index actuel
+      debugPrint('Error updating navigation index: $e');
     }
   }
 
@@ -82,7 +95,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
   }
 
   void _onNavItemTapped(int index) {
-    if (_selectedIndex == index) return;
+    if (!mounted || _selectedIndex == index) return;
 
     setState(() {
       _selectedIndex = index;
@@ -94,25 +107,29 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
     }
 
     // Navigation vers la route correspondante
-    switch (index) {
-      case 0:
-        context.go('/');
-        break;
-      case 1:
-        context.go('/scan');
-        break;
-      case 2:
-        context.go('/manual-entry');
-        break;
-      case 3:
-        context.go('/budget');
-        break;
-      case 4:
-        context.go('/reports');
-        break;
-      case 5:
-        context.go('/settings');
-        break;
+    try {
+      switch (index) {
+        case 0:
+          context.go('/');
+          break;
+        case 1:
+          context.go('/scan');
+          break;
+        case 2:
+          context.go('/manual-entry');
+          break;
+        case 3:
+          context.go('/budget');
+          break;
+        case 4:
+          context.go('/reports');
+          break;
+        case 5:
+          context.go('/settings');
+          break;
+      }
+    } catch (e) {
+      debugPrint('Navigation error: $e');
     }
   }
 

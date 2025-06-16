@@ -21,10 +21,14 @@ import 'package:receipt_scanner_flutter/screens/settings_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  print('Avant dotenv');
-  await dotenv.load(fileName: ".env");
-  print('Après dotenv');
-  print('API KEY in main: [32m${dotenv.env['OPENAI_API_KEY']}\u001b[0m');
+  
+  try {
+    await dotenv.load(fileName: ".env");
+    print('Environment loaded successfully');
+  } catch (e) {
+    print('Error loading .env file: $e');
+  }
+  
   runApp(const MyApp());
 }
 
