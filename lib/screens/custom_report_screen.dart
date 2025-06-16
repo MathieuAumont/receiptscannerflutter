@@ -78,6 +78,7 @@ class _CustomReportScreenState extends State<CustomReportScreen> {
                     };
                     
                     return RadioListTile<String>(
+                      key: ValueKey(type),
                       contentPadding: EdgeInsets.zero,
                       title: Text(titles[type]!),
                       value: type,

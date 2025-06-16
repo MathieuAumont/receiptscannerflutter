@@ -167,6 +167,7 @@ class _ScanScreenState extends State<ScanScreen> {
       );
 
       // Save receipt
+      if (!mounted) return;
       final receiptProvider = Provider.of<ReceiptProvider>(context, listen: false);
       await receiptProvider.addReceipt(receipt);
 

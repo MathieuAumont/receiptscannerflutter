@@ -102,7 +102,21 @@ If any information is not found, use null or 0 as appropriate.'''
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final content = data['choices'][0]['message']['content'];
+        var content = data['choices'][0]['message']['content'] as String;
+
+        // Nettoyage du Markdown
+        content = content.trim();
+        if (content.startsWith('```json')) {
+          content = content.substring(7);
+        }
+        if (content.startsWith('```')) {
+          content = content.substring(3);
+        }
+        if (content.endsWith('```')) {
+          content = content.substring(0, content.length - 3);
+        }
+        content = content.trim();
+
         return jsonDecode(content);
       } else {
         throw Exception('Failed to analyze receipt: ${response.body}');

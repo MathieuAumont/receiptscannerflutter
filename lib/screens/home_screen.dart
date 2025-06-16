@@ -10,6 +10,7 @@ import 'package:receipt_scanner_flutter/widgets/receipt_card.dart';
 import 'package:receipt_scanner_flutter/widgets/modern_card.dart';
 import 'package:receipt_scanner_flutter/widgets/stat_card.dart';
 import 'package:receipt_scanner_flutter/utils/currency_formatter.dart';
+import 'package:receipt_scanner_flutter/models/receipt.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -23,6 +24,11 @@ class HomeScreen extends StatelessWidget {
     final currentMonthKey = budgetProvider.getCurrentMonthKey();
     final totalBudget = budgetProvider.getTotalBudgetForMonth(currentMonthKey);
     final monthlySpending = receiptProvider.getMonthlySpending();
+
+    final uniqueReceipts = <String, Receipt>{};
+    for (var receipt in receiptProvider.recentReceipts.cast<Receipt>()) {
+      uniqueReceipts[receipt.id] = receipt;
+    }
 
     return Scaffold(
       body: CustomScrollView(
@@ -94,6 +100,7 @@ class HomeScreen extends StatelessWidget {
                           icon: '📷',
                           color: const Color(0xFF6366F1),
                           onTap: () => context.go('/scan'),
+                          key: const ValueKey('quickaction_scan'),
                         ),
                       ),
                       const SizedBox(width: AppTheme.spacingM),
@@ -104,6 +111,7 @@ class HomeScreen extends StatelessWidget {
                           icon: '➕',
                           color: const Color(0xFFEC4899),
                           onTap: () => context.go('/manual-entry'),
+                          key: const ValueKey('quickaction_add'),
                         ),
                       ),
                     ],
@@ -141,8 +149,9 @@ class HomeScreen extends StatelessWidget {
                   else if (receiptProvider.recentReceipts.isEmpty)
                     _buildEmptyState(context, languageProvider)
                   else
-                    ...receiptProvider.recentReceipts.map(
+                    ...uniqueReceipts.values.map(
                       (receipt) => ReceiptCard(
+                        key: ValueKey(receipt.id),
                         receipt: receipt,
                         onTap: () => context.go('/receipt/${receipt.id}'),
                       ),
@@ -246,10 +255,12 @@ class HomeScreen extends StatelessWidget {
     required String icon,
     required Color color,
     required VoidCallback onTap,
+    Key? key,
   }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
+        key: key,
         padding: const EdgeInsets.all(AppTheme.spacingM),
         decoration: BoxDecoration(
           gradient: LinearGradient(

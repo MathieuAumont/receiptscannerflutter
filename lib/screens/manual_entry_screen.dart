@@ -269,6 +269,7 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
                           return Padding(
                             padding: const EdgeInsets.only(right: AppTheme.spacingS),
                             child: FilterChip(
+                              key: ValueKey('filterchip_${category.id}'),
                               selected: isSelected,
                               label: Row(
                                 mainAxisSize: MainAxisSize.min,
@@ -344,7 +345,7 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
                             Expanded(
                               flex: 2,
                               child: TextFormField(
-                                key: ValueKey('item_name_$index'),
+                                key: ValueKey('item_name_${_items[index].id}'),
                                 initialValue: _items[index].name,
                                 decoration: InputDecoration(
                                   labelText: languageProvider.translate('item_name'),
@@ -367,7 +368,7 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
                             // Price
                             Expanded(
                               child: TextFormField(
-                                key: ValueKey('item_price_$index'),
+                                key: ValueKey('item_price_${_items[index].id}'),
                                 initialValue: _items[index].price == 0 ? '' : _items[index].price.toString(),
                                 decoration: InputDecoration(
                                   labelText: languageProvider.translate('price'),
@@ -393,7 +394,7 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
                             SizedBox(
                               width: 60,
                               child: TextFormField(
-                                key: ValueKey('item_quantity_$index'),
+                                key: ValueKey('item_quantity_${_items[index].id}'),
                                 initialValue: _items[index].quantity.toString(),
                                 decoration: const InputDecoration(
                                   labelText: 'Qty',

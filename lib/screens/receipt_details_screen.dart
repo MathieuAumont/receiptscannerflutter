@@ -230,6 +230,7 @@ class ReceiptDetailsScreen extends StatelessWidget {
                   const SizedBox(height: AppTheme.spacingM),
                   ...receipt.items.map((item) {
                     return Padding(
+                      key: ValueKey(item.id),
                       padding: const EdgeInsets.only(bottom: AppTheme.spacingM),
                       child: Row(
                         children: [

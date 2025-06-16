@@ -318,6 +318,7 @@ class HomeTab extends StatelessWidget {
                   else
                     ...receiptProvider.recentReceipts.map(
                       (receipt) => ReceiptCard(
+                        key: ValueKey(receipt.id),
                         receipt: receipt,
                         onTap: () => context.go('/receipt/${receipt.id}'),
                       ),

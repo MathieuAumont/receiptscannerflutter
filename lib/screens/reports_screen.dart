@@ -270,6 +270,7 @@ class _ReportsScreenState extends State<ReportsScreen>
                   '📈 Comment évoluent mes dépenses ?',
                   '💡 Comment puis-je économiser ?',
                 ].map((question) => Padding(
+                  key: ValueKey(question),
                   padding: const EdgeInsets.only(bottom: AppTheme.spacingS),
                   child: Container(
                     width: double.infinity,
@@ -365,6 +366,7 @@ class _ReportsScreenState extends State<ReportsScreen>
                   {'icon': '📈', 'title': 'Rapport de tendance', 'desc': 'Évolution sur plusieurs mois'},
                   {'icon': '💰', 'title': 'Rapport budgétaire', 'desc': 'Comparaison budget vs réel'},
                 ].map((item) => Padding(
+                  key: ValueKey(item.hashCode),
                   padding: const EdgeInsets.only(bottom: AppTheme.spacingM),
                   child: Row(
                     children: [
@@ -517,6 +519,7 @@ class _ReportsScreenState extends State<ReportsScreen>
           final percentage = (amount / receiptProvider.totalSpending) * 100;
           
           return Padding(
+            key: ValueKey(category.id),
             padding: const EdgeInsets.symmetric(vertical: AppTheme.spacingXS),
             child: Row(
               children: [
