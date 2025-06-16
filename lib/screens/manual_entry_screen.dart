@@ -44,7 +44,7 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
 
   void _addItem() {
     setState(() {
-      _items.add(ItemEntry());
+      _items.add(ItemEntry(onChanged: _updateCalculations));
     });
   }
 
@@ -53,8 +53,15 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
       setState(() {
         _items[index].dispose();
         _items.removeAt(index);
+        _updateCalculations();
       });
     }
+  }
+
+  void _updateCalculations() {
+    setState(() {
+      // Force rebuild to update calculations
+    });
   }
 
   double _calculateSubtotal() {
@@ -94,7 +101,20 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Please add at least one item with a name and price'),
+            content: Text('Veuillez ajouter au moins un article avec un nom et un prix'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return;
+    }
+
+    if (_companyController.text.trim().isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Veuillez entrer le nom du magasin'),
+            backgroundColor: Colors.red,
           ),
         );
       }
@@ -147,7 +167,7 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Receipt saved successfully!'),
+              content: Text('Reçu sauvegardé avec succès!'),
               backgroundColor: Colors.green,
             ),
           );
@@ -158,7 +178,7 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error saving receipt: $e'),
+            content: Text('Erreur lors de la sauvegarde: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -192,40 +212,54 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
           children: [
             // General Information
             Card(
+              elevation: 2,
               child: Padding(
                 padding: const EdgeInsets.all(AppTheme.spacingM),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'General Information',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+                    Row(
+                      children: [
+                        Icon(Icons.info_outline, color: AppTheme.primaryColor),
+                        const SizedBox(width: AppTheme.spacingS),
+                        Text(
+                          'Informations générales',
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: AppTheme.primaryColor,
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: AppTheme.spacingM),
                     
                     // Date Picker
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: const Icon(Icons.calendar_today),
-                      title: Text(languageProvider.translate('date')),
-                      subtitle: Text(
-                        '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
+                    Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey.shade300),
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      onTap: () async {
-                        final date = await showDatePicker(
-                          context: context,
-                          initialDate: _selectedDate,
-                          firstDate: DateTime(2020),
-                          lastDate: DateTime.now(),
-                        );
-                        if (date != null && mounted) {
-                          setState(() {
-                            _selectedDate = date;
-                          });
-                        }
-                      },
+                      child: ListTile(
+                        leading: Icon(Icons.calendar_today, color: AppTheme.primaryColor),
+                        title: Text(languageProvider.translate('date')),
+                        subtitle: Text(
+                          '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                        onTap: () async {
+                          final date = await showDatePicker(
+                            context: context,
+                            initialDate: _selectedDate,
+                            firstDate: DateTime(2020),
+                            lastDate: DateTime.now(),
+                          );
+                          if (date != null && mounted) {
+                            setState(() {
+                              _selectedDate = date;
+                            });
+                          }
+                        },
+                      ),
                     ),
                     
                     const SizedBox(height: AppTheme.spacingM),
@@ -235,7 +269,14 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
                       controller: _companyController,
                       decoration: InputDecoration(
                         labelText: languageProvider.translate('store_name'),
-                        prefixIcon: const Icon(Icons.store),
+                        prefixIcon: Icon(Icons.store, color: AppTheme.primaryColor),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
+                        ),
                       ),
                     ),
                     
@@ -244,7 +285,9 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
                     // Category Selection
                     Text(
                       languageProvider.translate('category'),
-                      style: Theme.of(context).textTheme.titleMedium,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     const SizedBox(height: AppTheme.spacingS),
                     Wrap(
@@ -283,24 +326,34 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
             
             // Items Section
             Card(
+              elevation: 2,
               child: Padding(
                 padding: const EdgeInsets.all(AppTheme.spacingM),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
+                        Icon(Icons.shopping_cart, color: AppTheme.primaryColor),
+                        const SizedBox(width: AppTheme.spacingS),
                         Text(
                           languageProvider.translate('items'),
                           style: Theme.of(context).textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.w700,
+                            color: AppTheme.primaryColor,
                           ),
                         ),
-                        TextButton.icon(
+                        const Spacer(),
+                        ElevatedButton.icon(
                           onPressed: _addItem,
-                          icon: const Icon(Icons.add),
+                          icon: const Icon(Icons.add, size: 18),
                           label: Text(languageProvider.translate('add_item')),
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -308,17 +361,39 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
                     const SizedBox(height: AppTheme.spacingM),
                     
                     // Tax Toggle
-                    SwitchListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: const Text('Prices include tax'),
-                      value: _pricesIncludeTax,
-                      onChanged: (value) {
-                        if (mounted) {
-                          setState(() {
-                            _pricesIncludeTax = value;
-                          });
-                        }
-                      },
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: AppTheme.primaryColor.withOpacity(0.3)),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.info, color: AppTheme.primaryColor, size: 20),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Les prix incluent les taxes',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                color: AppTheme.primaryColor,
+                              ),
+                            ),
+                          ),
+                          Switch(
+                            value: _pricesIncludeTax,
+                            onChanged: (value) {
+                              if (mounted) {
+                                setState(() {
+                                  _pricesIncludeTax = value;
+                                });
+                              }
+                            },
+                            activeColor: AppTheme.primaryColor,
+                          ),
+                        ],
+                      ),
                     ),
                     
                     const SizedBox(height: AppTheme.spacingM),
@@ -327,59 +402,134 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
                     ..._items.asMap().entries.map((entry) {
                       final index = entry.key;
                       final item = entry.value;
+                      final itemTotal = (double.tryParse(item.priceController.text) ?? 0.0) * 
+                                      (int.tryParse(item.quantityController.text) ?? 1);
                       
                       return Container(
                         margin: const EdgeInsets.only(bottom: AppTheme.spacingM),
-                        child: Row(
+                        padding: const EdgeInsets.all(AppTheme.spacingM),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey.shade300),
+                          borderRadius: BorderRadius.circular(8),
+                          color: Colors.grey.shade50,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            Row(
+                              children: [
+                                Text(
+                                  'Article ${index + 1}',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                const Spacer(),
+                                if (itemTotal > 0)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: AppTheme.primaryColor,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Text(
+                                      CurrencyFormatter.format(itemTotal),
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ),
+                                if (_items.length > 1) ...[
+                                  const SizedBox(width: 8),
+                                  IconButton(
+                                    onPressed: () => _removeItem(index),
+                                    icon: Icon(
+                                      Icons.delete,
+                                      color: AppTheme.errorColor,
+                                      size: 20,
+                                    ),
+                                    constraints: const BoxConstraints(
+                                      minWidth: 32,
+                                      minHeight: 32,
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                            
+                            const SizedBox(height: AppTheme.spacingS),
+                            
                             // Item Name
-                            Expanded(
-                              flex: 2,
-                              child: TextFormField(
-                                controller: item.nameController,
-                                decoration: InputDecoration(
-                                  labelText: languageProvider.translate('item_name'),
+                            TextFormField(
+                              controller: item.nameController,
+                              decoration: InputDecoration(
+                                labelText: languageProvider.translate('item_name'),
+                                prefixIcon: const Icon(Icons.shopping_bag, size: 20),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 8,
                                 ),
                               ),
                             ),
                             
-                            const SizedBox(width: AppTheme.spacingS),
+                            const SizedBox(height: AppTheme.spacingS),
                             
-                            // Price
-                            Expanded(
-                              child: TextFormField(
-                                controller: item.priceController,
-                                decoration: InputDecoration(
-                                  labelText: languageProvider.translate('price'),
-                                  prefixText: '\$',
+                            Row(
+                              children: [
+                                // Price
+                                Expanded(
+                                  flex: 2,
+                                  child: TextFormField(
+                                    controller: item.priceController,
+                                    decoration: InputDecoration(
+                                      labelText: languageProvider.translate('price'),
+                                      prefixText: '\$ ',
+                                      prefixIcon: const Icon(Icons.attach_money, size: 20),
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      contentPadding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 8,
+                                      ),
+                                    ),
+                                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                    onChanged: (value) => _updateCalculations(),
+                                  ),
                                 ),
-                                keyboardType: TextInputType.number,
-                              ),
+                                
+                                const SizedBox(width: AppTheme.spacingS),
+                                
+                                // Quantity
+                                Expanded(
+                                  child: TextFormField(
+                                    controller: item.quantityController,
+                                    decoration: InputDecoration(
+                                      labelText: 'Qté',
+                                      prefixIcon: const Icon(Icons.numbers, size: 20),
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      contentPadding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 8,
+                                      ),
+                                    ),
+                                    keyboardType: TextInputType.number,
+                                    onChanged: (value) => _updateCalculations(),
+                                  ),
+                                ),
+                              ],
                             ),
-                            
-                            const SizedBox(width: AppTheme.spacingS),
-                            
-                            // Quantity
-                            SizedBox(
-                              width: 60,
-                              child: TextFormField(
-                                controller: item.quantityController,
-                                decoration: const InputDecoration(
-                                  labelText: 'Qty',
-                                ),
-                                keyboardType: TextInputType.number,
-                              ),
-                            ),
-                            
-                            // Remove Button
-                            if (_items.length > 1)
-                              IconButton(
-                                onPressed: () => _removeItem(index),
-                                icon: Icon(
-                                  Icons.delete,
-                                  color: AppTheme.errorColor,
-                                ),
-                              ),
                           ],
                         ),
                       );
@@ -393,36 +543,58 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
             
             // Summary Section
             Card(
+              elevation: 3,
+              color: AppTheme.primaryColor.withOpacity(0.05),
               child: Padding(
                 padding: const EdgeInsets.all(AppTheme.spacingM),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Summary',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+                    Row(
+                      children: [
+                        Icon(Icons.calculate, color: AppTheme.primaryColor),
+                        const SizedBox(width: AppTheme.spacingS),
+                        Text(
+                          'Résumé',
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: AppTheme.primaryColor,
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: AppTheme.spacingM),
                     
-                    _buildSummaryRow(
-                      languageProvider.translate('subtotal'),
-                      CurrencyFormatter.format(_calculateSubtotal()),
-                    ),
-                    _buildSummaryRow(
-                      languageProvider.translate('tps'),
-                      CurrencyFormatter.format(_calculateTPS()),
-                    ),
-                    _buildSummaryRow(
-                      languageProvider.translate('tvq'),
-                      CurrencyFormatter.format(_calculateTVQ()),
-                    ),
-                    const Divider(),
-                    _buildSummaryRow(
-                      languageProvider.translate('total'),
-                      CurrencyFormatter.format(_calculateTotal()),
-                      isTotal: true,
+                    Container(
+                      padding: const EdgeInsets.all(AppTheme.spacingM),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.grey.shade300),
+                      ),
+                      child: Column(
+                        children: [
+                          _buildSummaryRow(
+                            languageProvider.translate('subtotal'),
+                            CurrencyFormatter.format(_calculateSubtotal()),
+                          ),
+                          const Divider(height: 20),
+                          _buildSummaryRow(
+                            languageProvider.translate('tps'),
+                            CurrencyFormatter.format(_calculateTPS()),
+                          ),
+                          _buildSummaryRow(
+                            languageProvider.translate('tvq'),
+                            CurrencyFormatter.format(_calculateTVQ()),
+                          ),
+                          const Divider(height: 20, thickness: 2),
+                          _buildSummaryRow(
+                            languageProvider.translate('total'),
+                            CurrencyFormatter.format(_calculateTotal()),
+                            isTotal: true,
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -433,16 +605,38 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
             
             // Notes Section
             Card(
+              elevation: 2,
               child: Padding(
                 padding: const EdgeInsets.all(AppTheme.spacingM),
-                child: TextFormField(
-                  controller: _notesController,
-                  decoration: const InputDecoration(
-                    labelText: 'Notes (optional)',
-                    alignLabelWithHint: true,
-                    border: InputBorder.none,
-                  ),
-                  maxLines: 3,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.note, color: AppTheme.primaryColor),
+                        const SizedBox(width: AppTheme.spacingS),
+                        Text(
+                          'Notes (optionnel)',
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.primaryColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppTheme.spacingS),
+                    TextFormField(
+                      controller: _notesController,
+                      decoration: InputDecoration(
+                        hintText: 'Ajouter des notes sur ce reçu...',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        contentPadding: const EdgeInsets.all(12),
+                      ),
+                      maxLines: 3,
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -456,12 +650,36 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
                 onPressed: _isLoading ? null : _saveReceipt,
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.all(AppTheme.spacingM),
+                  backgroundColor: AppTheme.primaryColor,
+                  foregroundColor: Colors.white,
+                  elevation: 3,
                 ),
                 child: _isLoading
-                    ? const CircularProgressIndicator()
-                    : Text(
-                        languageProvider.translate('save'),
-                        style: const TextStyle(fontSize: 16),
+                    ? const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          ),
+                          SizedBox(width: 12),
+                          Text('Sauvegarde en cours...'),
+                        ],
+                      )
+                    : Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.save),
+                          const SizedBox(width: 8),
+                          Text(
+                            languageProvider.translate('save'),
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                          ),
+                        ],
                       ),
               ),
             ),
@@ -482,14 +700,16 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
           Text(
             label,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              fontWeight: isTotal ? FontWeight.w700 : FontWeight.normal,
+              fontWeight: isTotal ? FontWeight.w700 : FontWeight.w500,
+              fontSize: isTotal ? 16 : 14,
             ),
           ),
           Text(
             value,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              fontWeight: isTotal ? FontWeight.w700 : FontWeight.normal,
-              color: isTotal ? AppTheme.primaryColor : null,
+              fontWeight: FontWeight.w700,
+              color: isTotal ? AppTheme.primaryColor : AppTheme.textPrimary,
+              fontSize: isTotal ? 18 : 14,
             ),
           ),
         ],
@@ -500,8 +720,15 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
 
 class ItemEntry {
   final TextEditingController nameController = TextEditingController();
-  final TextEditingController priceController = TextEditingController(text: '0');
+  final TextEditingController priceController = TextEditingController();
   final TextEditingController quantityController = TextEditingController(text: '1');
+  final VoidCallback? onChanged;
+
+  ItemEntry({this.onChanged}) {
+    nameController.addListener(() => onChanged?.call());
+    priceController.addListener(() => onChanged?.call());
+    quantityController.addListener(() => onChanged?.call());
+  }
 
   void dispose() {
     nameController.dispose();
