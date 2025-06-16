@@ -1,18 +1,38 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:receipt_scanner_flutter/theme/app_theme.dart';
 import 'package:receipt_scanner_flutter/providers/language_provider.dart';
 import 'package:receipt_scanner_flutter/providers/receipt_provider.dart';
 import 'package:receipt_scanner_flutter/models/category.dart';
-import 'package:receipt_scanner_flutter/widgets/modern_app_bar.dart';
 import 'package:receipt_scanner_flutter/widgets/modern_card.dart';
 import 'package:receipt_scanner_flutter/widgets/stat_card.dart';
 import 'package:receipt_scanner_flutter/utils/currency_formatter.dart';
 
-class ReportsScreen extends StatelessWidget {
+class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});
+
+  @override
+  State<ReportsScreen> createState() => _ReportsScreenState();
+}
+
+class _ReportsScreenState extends State<ReportsScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 3, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -20,119 +40,440 @@ class ReportsScreen extends StatelessWidget {
     final receiptProvider = Provider.of<ReceiptProvider>(context);
 
     return Scaffold(
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(80),
-        child: ModernAppBar(
-          title: languageProvider.translate('reports'),
-          showBackButton: true,
-        ),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppTheme.spacingM),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      body: NestedScrollView(
+        headerSliverBuilder: (context, innerBoxIsScrolled) {
+          return [
+            SliverAppBar(
+              expandedHeight: 120,
+              floating: false,
+              pinned: true,
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              flexibleSpace: FlexibleSpaceBar(
+                title: Text(
+                  languageProvider.translate('reports'),
+                  style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: AppTheme.textPrimary,
+                  ),
+                ),
+                titlePadding: const EdgeInsets.only(
+                  left: AppTheme.spacingM,
+                  bottom: AppTheme.spacingM,
+                ),
+              ),
+            ),
+            SliverPersistentHeader(
+              pinned: true,
+              delegate: _SliverTabBarDelegate(
+                TabBar(
+                  controller: _tabController,
+                  tabs: const [
+                    Tab(text: '📊 Analyse'),
+                    Tab(text: '🤖 IA'),
+                    Tab(text: '📋 Rapport'),
+                  ],
+                  labelColor: AppTheme.primaryColor,
+                  unselectedLabelColor: AppTheme.textSecondary,
+                  indicatorColor: AppTheme.primaryColor,
+                  indicatorWeight: 3,
+                  labelStyle: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            ),
+          ];
+        },
+        body: TabBarView(
+          controller: _tabController,
           children: [
-            // Summary Stats
-            Row(
-              children: [
-                Expanded(
-                  child: StatCard(
-                    title: 'Total Expenses',
-                    value: CurrencyFormatter.format(receiptProvider.totalSpending),
-                    icon: LucideIcons.dollarSign,
-                    iconColor: AppTheme.primaryColor,
-                  ),
-                ),
-                const SizedBox(width: AppTheme.spacingM),
-                Expanded(
-                  child: StatCard(
-                    title: 'Number of Receipts',
-                    value: receiptProvider.receipts.length.toString(),
-                    icon: LucideIcons.receipt,
-                    iconColor: AppTheme.successColor,
-                  ),
-                ),
-              ],
-            ),
-            
-            const SizedBox(height: AppTheme.spacingL),
-            
-            // Category Breakdown
-            ModernCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        LucideIcons.pieChart,
-                        color: AppTheme.primaryColor,
-                      ),
-                      const SizedBox(width: AppTheme.spacingS),
-                      Text(
-                        'Category Breakdown',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: AppTheme.spacingM),
-                  if (receiptProvider.receipts.isNotEmpty)
-                    _buildCategoryChart(context, receiptProvider)
-                  else
-                    const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(AppTheme.spacingXXL),
-                        child: Text('No data available'),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            
-            const SizedBox(height: AppTheme.spacingM),
-            
-            // Monthly Trend
-            ModernCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        LucideIcons.trendingUp,
-                        color: AppTheme.primaryColor,
-                      ),
-                      const SizedBox(width: AppTheme.spacingS),
-                      Text(
-                        'Monthly Trend',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: AppTheme.spacingM),
-                  if (receiptProvider.receipts.isNotEmpty)
-                    _buildMonthlyChart(context, receiptProvider)
-                  else
-                    const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(AppTheme.spacingXXL),
-                        child: Text('No data available'),
-                      ),
-                    ),
-                ],
-              ),
-            ),
+            _buildAnalysisTab(receiptProvider),
+            _buildAITab(),
+            _buildCustomReportTab(),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildCategoryChart(BuildContext context, ReceiptProvider receiptProvider) {
+  Widget _buildAnalysisTab(ReceiptProvider receiptProvider) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(AppTheme.spacingM),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Summary Stats
+          Row(
+            children: [
+              Expanded(
+                child: _buildModernStatCard(
+                  title: 'Total',
+                  value: CurrencyFormatter.format(receiptProvider.totalSpending),
+                  icon: '💰',
+                  color: const Color(0xFF10B981),
+                ),
+              ),
+              const SizedBox(width: AppTheme.spacingM),
+              Expanded(
+                child: _buildModernStatCard(
+                  title: 'Reçus',
+                  value: receiptProvider.receipts.length.toString(),
+                  icon: '📄',
+                  color: const Color(0xFF6366F1),
+                ),
+              ),
+            ],
+          ),
+          
+          const SizedBox(height: AppTheme.spacingL),
+          
+          // Category Breakdown
+          ModernCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Text('📊', style: TextStyle(fontSize: 24)),
+                    const SizedBox(width: AppTheme.spacingS),
+                    Text(
+                      'Répartition par catégorie',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppTheme.spacingM),
+                if (receiptProvider.receipts.isNotEmpty)
+                  _buildCategoryChart(receiptProvider)
+                else
+                  const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(AppTheme.spacingXXL),
+                      child: Text('Aucune donnée disponible'),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          
+          const SizedBox(height: AppTheme.spacingM),
+          
+          // Monthly Trend
+          ModernCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Text('📈', style: TextStyle(fontSize: 24)),
+                    const SizedBox(width: AppTheme.spacingS),
+                    Text(
+                      'Tendance mensuelle',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppTheme.spacingM),
+                if (receiptProvider.receipts.isNotEmpty)
+                  _buildMonthlyChart(receiptProvider)
+                else
+                  const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(AppTheme.spacingXXL),
+                      child: Text('Aucune donnée disponible'),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAITab() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(AppTheme.spacingM),
+      child: Column(
+        children: [
+          ModernCard(
+            child: Column(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(AppTheme.spacingL),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        const Color(0xFF8B5CF6),
+                        const Color(0xFF8B5CF6).withOpacity(0.7),
+                      ],
+                    ),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Text('🤖', style: TextStyle(fontSize: 48)),
+                ),
+                const SizedBox(height: AppTheme.spacingL),
+                Text(
+                  'Assistant IA',
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: AppTheme.spacingS),
+                Text(
+                  'Posez des questions sur vos dépenses et obtenez des insights personnalisés',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AppTheme.textSecondary,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: AppTheme.spacingL),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () => context.go('/analysis'),
+                    icon: const Text('🚀'),
+                    label: const Text('Commencer l\'analyse'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF8B5CF6),
+                      padding: const EdgeInsets.all(AppTheme.spacingM),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          const SizedBox(height: AppTheme.spacingM),
+          
+          // Questions suggérées
+          ModernCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Questions suggérées',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: AppTheme.spacingM),
+                ...[
+                  '💰 Quel est mon total de dépenses ce mois ?',
+                  '📊 Dans quelle catégorie je dépense le plus ?',
+                  '📈 Comment évoluent mes dépenses ?',
+                  '💡 Comment puis-je économiser ?',
+                ].map((question) => Padding(
+                  padding: const EdgeInsets.only(bottom: AppTheme.spacingS),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(AppTheme.spacingM),
+                    decoration: BoxDecoration(
+                      color: AppTheme.surfaceColor,
+                      borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                      border: Border.all(
+                        color: Colors.grey.withOpacity(0.2),
+                      ),
+                    ),
+                    child: Text(question),
+                  ),
+                )),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCustomReportTab() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(AppTheme.spacingM),
+      child: Column(
+        children: [
+          ModernCard(
+            child: Column(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(AppTheme.spacingL),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        const Color(0xFFF59E0B),
+                        const Color(0xFFF59E0B).withOpacity(0.7),
+                      ],
+                    ),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Text('📋', style: TextStyle(fontSize: 48)),
+                ),
+                const SizedBox(height: AppTheme.spacingL),
+                Text(
+                  'Rapport personnalisé',
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: AppTheme.spacingS),
+                Text(
+                  'Créez un rapport détaillé pour une période spécifique',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AppTheme.textSecondary,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: AppTheme.spacingL),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () => context.go('/custom-report'),
+                    icon: const Text('📊'),
+                    label: const Text('Créer un rapport'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFF59E0B),
+                      padding: const EdgeInsets.all(AppTheme.spacingM),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          const SizedBox(height: AppTheme.spacingM),
+          
+          // Types de rapports
+          ModernCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Types de rapports disponibles',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: AppTheme.spacingM),
+                ...[
+                  {'icon': '📅', 'title': 'Rapport mensuel', 'desc': 'Analyse complète du mois'},
+                  {'icon': '📊', 'title': 'Rapport par catégorie', 'desc': 'Détail par type de dépense'},
+                  {'icon': '📈', 'title': 'Rapport de tendance', 'desc': 'Évolution sur plusieurs mois'},
+                  {'icon': '💰', 'title': 'Rapport budgétaire', 'desc': 'Comparaison budget vs réel'},
+                ].map((item) => Padding(
+                  padding: const EdgeInsets.only(bottom: AppTheme.spacingM),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(AppTheme.spacingS),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                        ),
+                        child: Text(
+                          item['icon']!,
+                          style: const TextStyle(fontSize: 20),
+                        ),
+                      ),
+                      const SizedBox(width: AppTheme.spacingM),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              item['title']!,
+                              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            Text(
+                              item['desc']!,
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: AppTheme.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                )),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildModernStatCard({
+    required String title,
+    required String value,
+    required String icon,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(AppTheme.spacingM),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            color.withOpacity(0.1),
+            color.withOpacity(0.05),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+        border: Border.all(
+          color: color.withOpacity(0.2),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(icon, style: const TextStyle(fontSize: 24)),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppTheme.spacingS,
+                  vertical: AppTheme.spacingXS,
+                ),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                ),
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    color: color,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppTheme.spacingM),
+          Text(
+            value,
+            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+              fontWeight: FontWeight.w800,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCategoryChart(ReceiptProvider receiptProvider) {
     final categories = CategoryService.getDefaultCategories();
     final categoryTotals = receiptProvider.getCategoryTotals();
     
@@ -188,6 +529,8 @@ class ReportsScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: AppTheme.spacingS),
+                Text(category.icon),
+                const SizedBox(width: AppTheme.spacingXS),
                 Expanded(
                   child: Text(category.name),
                 ),
@@ -211,7 +554,7 @@ class ReportsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildMonthlyChart(BuildContext context, ReceiptProvider receiptProvider) {
+  Widget _buildMonthlyChart(ReceiptProvider receiptProvider) {
     final now = DateTime.now();
     final monthlyData = <String, double>{};
     
@@ -240,7 +583,7 @@ class ReportsScreen extends StatelessWidget {
         barRods: [
           BarChartRodData(
             toY: entry.value,
-            color: AppTheme.primaryColor,
+            gradient: AppTheme.primaryGradient,
             width: 20,
             borderRadius: const BorderRadius.only(
               topLeft: Radius.circular(4),
@@ -291,8 +634,32 @@ class ReportsScreen extends StatelessWidget {
   }
 
   String _getShortMonthName(DateTime date) {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-                   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const months = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun',
+                   'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
     return months[date.month - 1];
+  }
+}
+
+class _SliverTabBarDelegate extends SliverPersistentHeaderDelegate {
+  final TabBar _tabBar;
+
+  _SliverTabBarDelegate(this._tabBar);
+
+  @override
+  double get minExtent => _tabBar.preferredSize.height;
+  @override
+  double get maxExtent => _tabBar.preferredSize.height;
+
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return Container(
+      color: Theme.of(context).scaffoldBackgroundColor,
+      child: _tabBar,
+    );
+  }
+
+  @override
+  bool shouldRebuild(_SliverTabBarDelegate oldDelegate) {
+    return false;
   }
 }

@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
 
 class AppTheme {
-  // Couleurs principales
-  static const Color primaryColor = Color(0xFF6366F1); // Indigo moderne
+  // Couleurs modernes et vibrantes (inspirées de l'image)
+  static const Color primaryColor = Color(0xFF6366F1); // Indigo vibrant
   static const Color primaryLight = Color(0xFF818CF8);
   static const Color primaryDark = Color(0xFF4F46E5);
   
-  // Couleurs secondaires
+  // Couleurs secondaires vibrantes
   static const Color secondaryColor = Color(0xFF10B981); // Emerald
   static const Color accentColor = Color(0xFFF59E0B); // Amber
+  static const Color pinkAccent = Color(0xFFEC4899); // Pink
+  static const Color purpleAccent = Color(0xFF8B5CF6); // Purple
   
-  // Couleurs de surface
+  // Couleurs de surface modernes
   static const Color surfaceColor = Color(0xFFFAFAFA);
   static const Color cardColor = Color(0xFFFFFFFF);
   static const Color backgroundColor = Color(0xFFF8FAFC);
@@ -26,9 +28,21 @@ class AppTheme {
   static const Color errorColor = Color(0xFFEF4444);
   static const Color infoColor = Color(0xFF3B82F6);
   
-  // Gradients
+  // Gradients modernes
   static const LinearGradient primaryGradient = LinearGradient(
     colors: [primaryColor, primaryLight],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+  
+  static const LinearGradient successGradient = LinearGradient(
+    colors: [Color(0xFF10B981), Color(0xFF34D399)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+  
+  static const LinearGradient warningGradient = LinearGradient(
+    colors: [Color(0xFFF59E0B), Color(0xFFFBBF24)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
@@ -39,7 +53,7 @@ class AppTheme {
     end: Alignment.bottomCenter,
   );
 
-  // Ombres
+  // Ombres modernes
   static List<BoxShadow> get cardShadow => [
     BoxShadow(
       color: Colors.black.withOpacity(0.04),
@@ -80,7 +94,7 @@ class AppTheme {
   static const double spacingXL = 32.0;
   static const double spacingXXL = 48.0;
 
-  // Thème clair
+  // Thème clair moderne
   static ThemeData get lightTheme => ThemeData(
     useMaterial3: true,
     colorScheme: ColorScheme.fromSeed(
@@ -97,8 +111,8 @@ class AppTheme {
       centerTitle: false,
       titleTextStyle: const TextStyle(
         color: textPrimary,
-        fontSize: 24,
-        fontWeight: FontWeight.w700,
+        fontSize: 28,
+        fontWeight: FontWeight.w800,
         letterSpacing: -0.5,
       ),
       iconTheme: const IconThemeData(
@@ -111,7 +125,7 @@ class AppTheme {
       elevation: 0,
       shadowColor: Colors.transparent,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(radiusMedium),
+        borderRadius: BorderRadius.circular(radiusLarge),
       ),
       margin: const EdgeInsets.symmetric(
         horizontal: spacingM,
@@ -129,7 +143,25 @@ class AppTheme {
           vertical: spacingM,
         ),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(radiusMedium),
+          borderRadius: BorderRadius.circular(radiusLarge),
+        ),
+        textStyle: const TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.5,
+        ),
+      ),
+    ),
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
+        foregroundColor: primaryColor,
+        side: BorderSide(color: primaryColor.withOpacity(0.3)),
+        padding: const EdgeInsets.symmetric(
+          horizontal: spacingL,
+          vertical: spacingM,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(radiusLarge),
         ),
         textStyle: const TextStyle(
           fontSize: 16,
@@ -146,7 +178,7 @@ class AppTheme {
           vertical: spacingS,
         ),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(radiusSmall),
+          borderRadius: BorderRadius.circular(radiusMedium),
         ),
         textStyle: const TextStyle(
           fontSize: 14,
@@ -159,18 +191,18 @@ class AppTheme {
       filled: true,
       fillColor: surfaceColor,
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(radiusMedium),
+        borderRadius: BorderRadius.circular(radiusLarge),
         borderSide: BorderSide.none,
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(radiusMedium),
+        borderRadius: BorderRadius.circular(radiusLarge),
         borderSide: BorderSide(
           color: Colors.grey.withOpacity(0.2),
           width: 1,
         ),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(radiusMedium),
+        borderRadius: BorderRadius.circular(radiusLarge),
         borderSide: const BorderSide(
           color: primaryColor,
           width: 2,
@@ -195,56 +227,70 @@ class AppTheme {
       showSelectedLabels: false,
       showUnselectedLabels: false,
     ),
+    tabBarTheme: TabBarTheme(
+      labelColor: primaryColor,
+      unselectedLabelColor: textSecondary,
+      indicatorColor: primaryColor,
+      indicatorSize: TabBarIndicatorSize.label,
+      labelStyle: const TextStyle(
+        fontWeight: FontWeight.w600,
+        fontSize: 14,
+      ),
+      unselectedLabelStyle: const TextStyle(
+        fontWeight: FontWeight.w500,
+        fontSize: 14,
+      ),
+    ),
     textTheme: const TextTheme(
       displayLarge: TextStyle(
-        fontSize: 32,
-        fontWeight: FontWeight.w800,
+        fontSize: 36,
+        fontWeight: FontWeight.w900,
         color: textPrimary,
         letterSpacing: -1,
       ),
       displayMedium: TextStyle(
-        fontSize: 28,
-        fontWeight: FontWeight.w700,
+        fontSize: 32,
+        fontWeight: FontWeight.w800,
         color: textPrimary,
         letterSpacing: -0.5,
       ),
       displaySmall: TextStyle(
-        fontSize: 24,
-        fontWeight: FontWeight.w700,
+        fontSize: 28,
+        fontWeight: FontWeight.w800,
         color: textPrimary,
         letterSpacing: -0.5,
       ),
       headlineLarge: TextStyle(
-        fontSize: 22,
-        fontWeight: FontWeight.w600,
+        fontSize: 24,
+        fontWeight: FontWeight.w700,
         color: textPrimary,
         letterSpacing: -0.25,
       ),
       headlineMedium: TextStyle(
-        fontSize: 20,
-        fontWeight: FontWeight.w600,
+        fontSize: 22,
+        fontWeight: FontWeight.w700,
         color: textPrimary,
         letterSpacing: -0.25,
       ),
       headlineSmall: TextStyle(
-        fontSize: 18,
+        fontSize: 20,
         fontWeight: FontWeight.w600,
         color: textPrimary,
       ),
       titleLarge: TextStyle(
-        fontSize: 16,
+        fontSize: 18,
         fontWeight: FontWeight.w600,
         color: textPrimary,
         letterSpacing: 0.15,
       ),
       titleMedium: TextStyle(
-        fontSize: 14,
+        fontSize: 16,
         fontWeight: FontWeight.w600,
         color: textPrimary,
         letterSpacing: 0.1,
       ),
       titleSmall: TextStyle(
-        fontSize: 12,
+        fontSize: 14,
         fontWeight: FontWeight.w600,
         color: textSecondary,
         letterSpacing: 0.5,
@@ -288,7 +334,7 @@ class AppTheme {
     ),
   );
 
-  // Thème sombre
+  // Thème sombre moderne
   static ThemeData get darkTheme => ThemeData(
     useMaterial3: true,
     colorScheme: ColorScheme.fromSeed(
@@ -305,8 +351,8 @@ class AppTheme {
       centerTitle: false,
       titleTextStyle: TextStyle(
         color: Colors.white,
-        fontSize: 24,
-        fontWeight: FontWeight.w700,
+        fontSize: 28,
+        fontWeight: FontWeight.w800,
         letterSpacing: -0.5,
       ),
       iconTheme: IconThemeData(
@@ -319,7 +365,7 @@ class AppTheme {
       elevation: 0,
       shadowColor: Colors.transparent,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(radiusMedium),
+        borderRadius: BorderRadius.circular(radiusLarge),
       ),
       margin: const EdgeInsets.symmetric(
         horizontal: spacingM,

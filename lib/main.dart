@@ -6,14 +6,10 @@ import 'package:receipt_scanner_flutter/providers/theme_provider.dart';
 import 'package:receipt_scanner_flutter/providers/language_provider.dart';
 import 'package:receipt_scanner_flutter/providers/receipt_provider.dart';
 import 'package:receipt_scanner_flutter/providers/budget_provider.dart';
-import 'package:receipt_scanner_flutter/screens/main_screen.dart';
-import 'package:receipt_scanner_flutter/screens/scan_screen.dart';
-import 'package:receipt_scanner_flutter/screens/manual_entry_screen.dart';
+import 'package:receipt_scanner_flutter/screens/main_navigation_screen.dart';
 import 'package:receipt_scanner_flutter/screens/receipt_details_screen.dart';
-import 'package:receipt_scanner_flutter/screens/settings_screen.dart';
-import 'package:receipt_scanner_flutter/screens/reports_screen.dart';
-import 'package:receipt_scanner_flutter/screens/budget_screen.dart';
 import 'package:receipt_scanner_flutter/screens/analysis_screen.dart';
+import 'package:receipt_scanner_flutter/screens/custom_report_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -51,17 +47,36 @@ class MyApp extends StatelessWidget {
 final GoRouter _router = GoRouter(
   initialLocation: '/',
   routes: [
-    GoRoute(
-      path: '/',
-      builder: (context, state) => const MainScreen(),
-    ),
-    GoRoute(
-      path: '/scan',
-      builder: (context, state) => const ScanScreen(),
-    ),
-    GoRoute(
-      path: '/manual-entry',
-      builder: (context, state) => const ManualEntryScreen(),
+    ShellRoute(
+      builder: (context, state, child) {
+        return MainNavigationScreen(child: child);
+      },
+      routes: [
+        GoRoute(
+          path: '/',
+          builder: (context, state) => const SizedBox(), // Home content handled by MainNavigationScreen
+        ),
+        GoRoute(
+          path: '/scan',
+          builder: (context, state) => const SizedBox(), // Scan content handled by MainNavigationScreen
+        ),
+        GoRoute(
+          path: '/manual-entry',
+          builder: (context, state) => const SizedBox(), // Manual entry content handled by MainNavigationScreen
+        ),
+        GoRoute(
+          path: '/budget',
+          builder: (context, state) => const SizedBox(), // Budget content handled by MainNavigationScreen
+        ),
+        GoRoute(
+          path: '/reports',
+          builder: (context, state) => const SizedBox(), // Reports content handled by MainNavigationScreen
+        ),
+        GoRoute(
+          path: '/settings',
+          builder: (context, state) => const SizedBox(), // Settings content handled by MainNavigationScreen
+        ),
+      ],
     ),
     GoRoute(
       path: '/receipt/:id',
@@ -70,20 +85,12 @@ final GoRouter _router = GoRouter(
       ),
     ),
     GoRoute(
-      path: '/settings',
-      builder: (context, state) => const SettingsScreen(),
-    ),
-    GoRoute(
-      path: '/reports',
-      builder: (context, state) => const ReportsScreen(),
-    ),
-    GoRoute(
-      path: '/budget',
-      builder: (context, state) => const BudgetScreen(),
-    ),
-    GoRoute(
       path: '/analysis',
       builder: (context, state) => const AnalysisScreen(),
+    ),
+    GoRoute(
+      path: '/custom-report',
+      builder: (context, state) => const CustomReportScreen(),
     ),
   ],
 );
