@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lucide_icons/lucide_icons.dart';
 import 'package:receipt_scanner_flutter/theme/app_theme.dart';
 import 'package:receipt_scanner_flutter/providers/language_provider.dart';
 
@@ -132,12 +131,12 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildNavItem(0, LucideIcons.home, languageProvider.translate('home')),
-                _buildNavItem(1, LucideIcons.camera, languageProvider.translate('scan'), isSpecial: true),
-                _buildNavItem(2, LucideIcons.plus, languageProvider.translate('manual_entry')),
-                _buildNavItem(3, LucideIcons.wallet, languageProvider.translate('budget')),
-                _buildNavItem(4, LucideIcons.barChart3, languageProvider.translate('reports')),
-                _buildNavItem(5, LucideIcons.settings, languageProvider.translate('settings')),
+                _buildNavItem(0, Icons.home, languageProvider.translate('home')),
+                _buildNavItem(1, Icons.camera_alt, languageProvider.translate('scan'), isSpecial: true),
+                _buildNavItem(2, Icons.add, languageProvider.translate('manual_entry')),
+                _buildNavItem(3, Icons.account_balance_wallet, languageProvider.translate('budget')),
+                _buildNavItem(4, Icons.bar_chart, languageProvider.translate('reports')),
+                _buildNavItem(5, Icons.settings, languageProvider.translate('settings')),
               ],
             ),
           ),

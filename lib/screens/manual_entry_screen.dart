@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lucide_icons/lucide_icons.dart';
 import 'package:receipt_scanner_flutter/theme/app_theme.dart';
 import 'package:receipt_scanner_flutter/providers/language_provider.dart';
 import 'package:receipt_scanner_flutter/providers/receipt_provider.dart';
@@ -108,7 +107,8 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
     });
 
     try {
-      final uniqueId = '${DateTime.now().millisecondsSinceEpoch}_${DateTime.now().microsecond}';
+      final now = DateTime.now();
+      final uniqueId = '${now.millisecondsSinceEpoch}_${now.microsecond}_${_companyController.text.hashCode}';
       
       final receiptItems = validItems.asMap().entries.map((entry) {
         final index = entry.key;
@@ -209,7 +209,7 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
                       // Date Picker
                       ListTile(
                         contentPadding: EdgeInsets.zero,
-                        leading: const Icon(LucideIcons.calendar),
+                        leading: const Icon(Icons.calendar_today),
                         title: Text(languageProvider.translate('date')),
                         subtitle: Text(
                           '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
@@ -236,7 +236,7 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
                         controller: _companyController,
                         decoration: InputDecoration(
                           labelText: languageProvider.translate('store_name'),
-                          prefixIcon: const Icon(LucideIcons.store),
+                          prefixIcon: const Icon(Icons.store),
                         ),
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
@@ -304,7 +304,7 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
                           ),
                           TextButton.icon(
                             onPressed: _addItem,
-                            icon: const Icon(LucideIcons.plus),
+                            icon: const Icon(Icons.add),
                             label: Text(languageProvider.translate('add_item')),
                           ),
                         ],
@@ -332,7 +332,7 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
                         final item = entry.value;
                         
                         return Container(
-                          key: ValueKey('item_$index'),
+                          key: ValueKey('item_entry_$index'),
                           margin: const EdgeInsets.only(bottom: AppTheme.spacingM),
                           child: Row(
                             children: [
@@ -380,7 +380,7 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
                                 IconButton(
                                   onPressed: () => _removeItem(index),
                                   icon: Icon(
-                                    LucideIcons.trash2,
+                                    Icons.delete,
                                     color: AppTheme.errorColor,
                                   ),
                                 ),

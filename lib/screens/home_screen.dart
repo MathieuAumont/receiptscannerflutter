@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lucide_icons/lucide_icons.dart';
 import 'package:receipt_scanner_flutter/theme/app_theme.dart';
 import 'package:receipt_scanner_flutter/providers/language_provider.dart';
 import 'package:receipt_scanner_flutter/providers/receipt_provider.dart';
@@ -150,9 +149,12 @@ class HomeScreen extends StatelessWidget {
 
   Widget _buildReceiptsList(ReceiptProvider receiptProvider) {
     return Column(
-      children: receiptProvider.recentReceipts.map((receipt) {
+      children: receiptProvider.recentReceipts.asMap().entries.map((entry) {
+        final index = entry.key;
+        final receipt = entry.value;
+        
         return Container(
-          key: ValueKey('receipt_${receipt.id}'),
+          key: ValueKey('receipt_${receipt.id}_$index'),
           margin: const EdgeInsets.only(bottom: AppTheme.spacingM),
           child: _buildReceiptCard(receipt),
         );
