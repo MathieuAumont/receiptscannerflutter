@@ -25,7 +25,7 @@ class ModernCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
-    return Container(
+    final cardWidget = Container(
       margin: margin ?? const EdgeInsets.symmetric(
         horizontal: AppTheme.spacingM,
         vertical: AppTheme.spacingS,
@@ -39,24 +39,19 @@ class ModernCard extends StatelessWidget {
           width: 1,
         ) : null,
       ),
-      child: onTap != null 
-          ? Material(
-              color: Colors.transparent,
-              borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-              child: InkWell(
-                key: ValueKey('modern_card_${hashCode}'), // Clé unique basée sur le hashCode
-                onTap: onTap,
-                borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                child: Padding(
-                  padding: padding ?? const EdgeInsets.all(AppTheme.spacingM),
-                  child: child,
-                ),
-              ),
-            )
-          : Padding(
-              padding: padding ?? const EdgeInsets.all(AppTheme.spacingM),
-              child: child,
-            ),
+      child: Padding(
+        padding: padding ?? const EdgeInsets.all(AppTheme.spacingM),
+        child: child,
+      ),
     );
+
+    if (onTap != null) {
+      return GestureDetector(
+        onTap: onTap,
+        child: cardWidget,
+      );
+    }
+
+    return cardWidget;
   }
 }

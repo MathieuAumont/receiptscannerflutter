@@ -154,51 +154,44 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   Widget _buildNavItem(int index, IconData icon, String label, {bool isSpecial = false}) {
     final isSelected = _selectedIndex == index;
     
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        key: ValueKey('nav_item_$index'), // Clé unique pour chaque bouton
-        onTap: () => _onNavItemTapped(index),
-        borderRadius: BorderRadius.circular(
-          isSpecial ? AppTheme.radiusLarge : AppTheme.radiusMedium,
+    return GestureDetector(
+      onTap: () => _onNavItemTapped(index),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: EdgeInsets.symmetric(
+          horizontal: isSpecial ? AppTheme.spacingM : AppTheme.spacingS,
+          vertical: AppTheme.spacingS,
         ),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: EdgeInsets.symmetric(
-            horizontal: isSpecial ? AppTheme.spacingM : AppTheme.spacingS,
-            vertical: AppTheme.spacingS,
+        decoration: BoxDecoration(
+          gradient: isSpecial 
+              ? AppTheme.primaryGradient
+              : isSelected 
+                  ? LinearGradient(
+                      colors: [
+                        AppTheme.primaryColor.withOpacity(0.1),
+                        AppTheme.primaryColor.withOpacity(0.05),
+                      ],
+                    )
+                  : null,
+          borderRadius: BorderRadius.circular(
+            isSpecial ? AppTheme.radiusLarge : AppTheme.radiusMedium,
           ),
-          decoration: BoxDecoration(
-            gradient: isSpecial 
-                ? AppTheme.primaryGradient
-                : isSelected 
-                    ? LinearGradient(
-                        colors: [
-                          AppTheme.primaryColor.withOpacity(0.1),
-                          AppTheme.primaryColor.withOpacity(0.05),
-                        ],
-                      )
-                    : null,
-            borderRadius: BorderRadius.circular(
-              isSpecial ? AppTheme.radiusLarge : AppTheme.radiusMedium,
+          boxShadow: isSpecial ? [
+            BoxShadow(
+              color: AppTheme.primaryColor.withOpacity(0.3),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
             ),
-            boxShadow: isSpecial ? [
-              BoxShadow(
-                color: AppTheme.primaryColor.withOpacity(0.3),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ] : null,
-          ),
-          child: Icon(
-            icon,
-            color: isSpecial 
-                ? Colors.white
-                : isSelected 
-                    ? AppTheme.primaryColor
-                    : AppTheme.textTertiary,
-            size: isSpecial ? 28 : 24,
-          ),
+          ] : null,
+        ),
+        child: Icon(
+          icon,
+          color: isSpecial 
+              ? Colors.white
+              : isSelected 
+                  ? AppTheme.primaryColor
+                  : AppTheme.textTertiary,
+          size: isSpecial ? 28 : 24,
         ),
       ),
     );
