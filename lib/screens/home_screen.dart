@@ -155,11 +155,11 @@ class HomeScreen extends StatelessWidget {
       children: receiptProvider.recentReceipts.asMap().entries.map((entry) {
         final index = entry.key;
         final receipt = entry.value;
-        return Container(
-          key: ValueKey('receipt_container_${receipt.id}'),
-          child: ReceiptCard(
+        return Builder(
+          builder: (itemContext) => ReceiptCard(
+            key: ValueKey(receipt.id),
             receipt: receipt,
-            onTap: () => context.go('/receipt/${receipt.id}'),
+            onTap: () => itemContext.go('/receipt/${receipt.id}'),
           ),
         );
       }).toList(),
