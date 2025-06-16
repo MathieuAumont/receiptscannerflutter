@@ -3,7 +3,9 @@ import 'package:camera/camera.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:receipt_scanner_flutter/theme/app_theme.dart';
 import 'package:receipt_scanner_flutter/providers/language_provider.dart';
+import 'package:receipt_scanner_flutter/widgets/modern_app_bar.dart';
 
 class ScanScreen extends StatefulWidget {
   const ScanScreen({super.key});
@@ -34,14 +36,18 @@ class _ScanScreenState extends State<ScanScreen> {
           ResolutionPreset.high,
         );
         await _controller!.initialize();
-        setState(() {
-          _isInitialized = true;
-        });
+        if (mounted) {
+          setState(() {
+            _isInitialized = true;
+          });
+        }
       }
     } catch (e) {
-      setState(() {
-        _error = 'Failed to initialize camera: $e';
-      });
+      if (mounted) {
+        setState(() {
+          _error = 'Failed to initialize camera: $e';
+        });
+      }
     }
   }
 
@@ -63,13 +69,17 @@ class _ScanScreenState extends State<ScanScreen> {
       // Process the image here
       await _processImage(image.path);
     } catch (e) {
-      setState(() {
-        _error = 'Failed to take picture: $e';
-      });
+      if (mounted) {
+        setState(() {
+          _error = 'Failed to take picture: $e';
+        });
+      }
     } finally {
-      setState(() {
-        _isAnalyzing = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isAnalyzing = false;
+        });
+      }
     }
   }
 
@@ -86,13 +96,17 @@ class _ScanScreenState extends State<ScanScreen> {
         await _processImage(image.path);
       }
     } catch (e) {
-      setState(() {
-        _error = 'Failed to pick image: $e';
-      });
+      if (mounted) {
+        setState(() {
+          _error = 'Failed to pick image: $e';
+        });
+      }
     } finally {
-      setState(() {
-        _isAnalyzing = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isAnalyzing = false;
+        });
+      }
     }
   }
 
@@ -114,25 +128,29 @@ class _ScanScreenState extends State<ScanScreen> {
 
     if (_error != null) {
       return Scaffold(
-        appBar: AppBar(
-          title: Text(languageProvider.translate('scan_receipt')),
+        appBar: PreferredSize(
+          preferredSize: const Size.fromHeight(80),
+          child: ModernAppBar(
+            title: languageProvider.translate('scan_receipt'),
+            showBackButton: true,
+          ),
         ),
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
+              Icon(
                 LucideIcons.alertCircle,
                 size: 64,
-                color: Colors.red,
+                color: AppTheme.errorColor,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppTheme.spacingM),
               Text(
                 _error!,
-                style: const TextStyle(color: Colors.red),
+                style: TextStyle(color: AppTheme.errorColor),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppTheme.spacingM),
               ElevatedButton(
                 onPressed: () {
                   setState(() {
@@ -150,8 +168,12 @@ class _ScanScreenState extends State<ScanScreen> {
 
     if (!_isInitialized) {
       return Scaffold(
-        appBar: AppBar(
-          title: Text(languageProvider.translate('scan_receipt')),
+        appBar: PreferredSize(
+          preferredSize: const Size.fromHeight(80),
+          child: ModernAppBar(
+            title: languageProvider.translate('scan_receipt'),
+            showBackButton: true,
+          ),
         ),
         body: const Center(
           child: CircularProgressIndicator(),
@@ -177,7 +199,7 @@ class _ScanScreenState extends State<ScanScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     CircularProgressIndicator(color: Colors.white),
-                    SizedBox(height: 16),
+                    SizedBox(height: AppTheme.spacingM),
                     Text(
                       'Analyzing...',
                       style: TextStyle(
@@ -196,7 +218,7 @@ class _ScanScreenState extends State<ScanScreen> {
             left: 0,
             right: 0,
             child: Container(
-              padding: const EdgeInsets.all(32),
+              padding: const EdgeInsets.all(AppTheme.spacingXXL),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
@@ -253,8 +275,8 @@ class _ScanScreenState extends State<ScanScreen> {
           
           // Back Button
           Positioned(
-            top: MediaQuery.of(context).padding.top + 16,
-            left: 16,
+            top: MediaQuery.of(context).padding.top + AppTheme.spacingM,
+            left: AppTheme.spacingM,
             child: Container(
               decoration: BoxDecoration(
                 color: Colors.black54,
