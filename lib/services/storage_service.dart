@@ -10,12 +10,31 @@ class StorageService {
       final prefs = await SharedPreferences.getInstance();
       final receiptsJson = prefs.getString(_receiptsKey);
       
-      if (receiptsJson == null) return [];
+      if (receiptsJson == null || receiptsJson.isEmpty) return [];
       
-      final List<dynamic> receiptsList = json.decode(receiptsJson);
-      return receiptsList.map((json) => Receipt.fromJson(json)).toList();
+      // Vérifier que c'est bien une chaîne JSON valide
+      final dynamic decoded = json.decode(receiptsJson);
+      
+      // S'assurer que c'est une liste
+      if (decoded is! List) {
+        print('Warning: Expected List but got ${decoded.runtimeType}');
+        return [];
+      }
+      
+      final List<dynamic> receiptsList = decoded;
+      return receiptsList.map((json) {
+        try {
+          return Receipt.fromJson(json as Map<String, dynamic>);
+        } catch (e) {
+          print('Error parsing receipt: $e');
+          return null;
+        }
+      }).where((receipt) => receipt != null).cast<Receipt>().toList();
     } catch (e) {
-      throw Exception('Failed to load receipts: $e');
+      print('Error loading receipts: $e');
+      // En cas d'erreur, nettoyer les données corrompues
+      await _clearCorruptedData();
+      return [];
     }
   }
 
@@ -62,6 +81,16 @@ class StorageService {
       await prefs.setString(_receiptsKey, receiptsJson);
     } catch (e) {
       throw Exception('Failed to save receipts: $e');
+    }
+  }
+
+  Future<void> _clearCorruptedData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_receiptsKey);
+      print('Cleared corrupted data');
+    } catch (e) {
+      print('Error clearing corrupted data: $e');
     }
   }
 
