@@ -27,17 +27,16 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
   
   DateTime _selectedDate = DateTime.now();
   String _selectedCategory = 'shopping';
-  List<ReceiptItem> _items = [
-    ReceiptItem(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      name: '',
-      price: 0.0,
-      quantity: 1,
-    ),
-  ];
+  List<ReceiptItem> _items = [];
   
   bool _pricesIncludeTax = false;
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _addItem();
+  }
 
   @override
   void dispose() {
@@ -50,7 +49,7 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
     setState(() {
       _items.add(
         ReceiptItem(
-          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          id: '${DateTime.now().millisecondsSinceEpoch}_${_items.length}',
           name: '',
           price: 0.0,
           quantity: 1,
@@ -112,8 +111,11 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
     });
 
     try {
+      // Générer un ID unique avec timestamp et random
+      final uniqueId = '${DateTime.now().millisecondsSinceEpoch}_${DateTime.now().microsecond}';
+      
       final receipt = Receipt(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        id: uniqueId,
         company: _companyController.text.trim(),
         date: _selectedDate,
         items: validItems,
@@ -269,7 +271,6 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
                           return Padding(
                             padding: const EdgeInsets.only(right: AppTheme.spacingS),
                             child: FilterChip(
-                              key: ValueKey('filterchip_${category.id}'),
                               selected: isSelected,
                               label: Row(
                                 mainAxisSize: MainAxisSize.min,
@@ -336,96 +337,101 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
                     const SizedBox(height: AppTheme.spacingM),
                     
                     // Items List
-                    ...List.generate(_items.length, (index) {
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: AppTheme.spacingM),
-                        child: Row(
-                          children: [
-                            // Item Name
-                            Expanded(
-                              flex: 2,
-                              child: TextFormField(
-                                key: ValueKey('item_name_${_items[index].id}'),
-                                initialValue: _items[index].name,
-                                decoration: InputDecoration(
-                                  labelText: languageProvider.translate('item_name'),
-                                ),
-                                onChanged: (value) {
-                                  setState(() {
-                                    _items[index] = ReceiptItem(
-                                      id: _items[index].id,
-                                      name: value,
-                                      price: _items[index].price,
-                                      quantity: _items[index].quantity,
-                                    );
-                                  });
-                                },
-                              ),
-                            ),
-                            
-                            const SizedBox(width: AppTheme.spacingS),
-                            
-                            // Price
-                            Expanded(
-                              child: TextFormField(
-                                key: ValueKey('item_price_${_items[index].id}'),
-                                initialValue: _items[index].price == 0 ? '' : _items[index].price.toString(),
-                                decoration: InputDecoration(
-                                  labelText: languageProvider.translate('price'),
-                                  prefixText: '\$',
-                                ),
-                                keyboardType: TextInputType.number,
-                                onChanged: (value) {
-                                  setState(() {
-                                    _items[index] = ReceiptItem(
-                                      id: _items[index].id,
-                                      name: _items[index].name,
-                                      price: double.tryParse(value) ?? 0.0,
-                                      quantity: _items[index].quantity,
-                                    );
-                                  });
-                                },
-                              ),
-                            ),
-                            
-                            const SizedBox(width: AppTheme.spacingS),
-                            
-                            // Quantity
-                            SizedBox(
-                              width: 60,
-                              child: TextFormField(
-                                key: ValueKey('item_quantity_${_items[index].id}'),
-                                initialValue: _items[index].quantity.toString(),
-                                decoration: const InputDecoration(
-                                  labelText: 'Qty',
-                                ),
-                                keyboardType: TextInputType.number,
-                                onChanged: (value) {
-                                  setState(() {
-                                    _items[index] = ReceiptItem(
-                                      id: _items[index].id,
-                                      name: _items[index].name,
-                                      price: _items[index].price,
-                                      quantity: int.tryParse(value) ?? 1,
-                                    );
-                                  });
-                                },
-                              ),
-                            ),
-                            
-                            // Remove Button
-                            if (_items.length > 1)
-                              IconButton(
-                                onPressed: () => _removeItem(index),
-                                icon: Icon(
-                                  LucideIcons.trash2,
-                                  color: AppTheme.errorColor,
+                    ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: _items.length,
+                      itemBuilder: (context, index) {
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: AppTheme.spacingM),
+                          child: Row(
+                            children: [
+                              // Item Name
+                              Expanded(
+                                flex: 2,
+                                child: TextFormField(
+                                  key: ValueKey('item_name_${_items[index].id}'),
+                                  initialValue: _items[index].name,
+                                  decoration: InputDecoration(
+                                    labelText: languageProvider.translate('item_name'),
+                                  ),
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _items[index] = ReceiptItem(
+                                        id: _items[index].id,
+                                        name: value,
+                                        price: _items[index].price,
+                                        quantity: _items[index].quantity,
+                                      );
+                                    });
+                                  },
                                 ),
                               ),
-                          ],
-                        ),
-                      );
-                    }),
+                              
+                              const SizedBox(width: AppTheme.spacingS),
+                              
+                              // Price
+                              Expanded(
+                                child: TextFormField(
+                                  key: ValueKey('item_price_${_items[index].id}'),
+                                  initialValue: _items[index].price == 0 ? '' : _items[index].price.toString(),
+                                  decoration: InputDecoration(
+                                    labelText: languageProvider.translate('price'),
+                                    prefixText: '\$',
+                                  ),
+                                  keyboardType: TextInputType.number,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _items[index] = ReceiptItem(
+                                        id: _items[index].id,
+                                        name: _items[index].name,
+                                        price: double.tryParse(value) ?? 0.0,
+                                        quantity: _items[index].quantity,
+                                      );
+                                    });
+                                  },
+                                ),
+                              ),
+                              
+                              const SizedBox(width: AppTheme.spacingS),
+                              
+                              // Quantity
+                              SizedBox(
+                                width: 60,
+                                child: TextFormField(
+                                  key: ValueKey('item_quantity_${_items[index].id}'),
+                                  initialValue: _items[index].quantity.toString(),
+                                  decoration: const InputDecoration(
+                                    labelText: 'Qty',
+                                  ),
+                                  keyboardType: TextInputType.number,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _items[index] = ReceiptItem(
+                                        id: _items[index].id,
+                                        name: _items[index].name,
+                                        price: _items[index].price,
+                                        quantity: int.tryParse(value) ?? 1,
+                                      );
+                                    });
+                                  },
+                                ),
+                              ),
+                              
+                              // Remove Button
+                              if (_items.length > 1)
+                                IconButton(
+                                  onPressed: () => _removeItem(index),
+                                  icon: Icon(
+                                    LucideIcons.trash2,
+                                    color: AppTheme.errorColor,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
                   ],
                 ),
               ),

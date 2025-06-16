@@ -10,7 +10,6 @@ import 'package:receipt_scanner_flutter/widgets/receipt_card.dart';
 import 'package:receipt_scanner_flutter/widgets/modern_card.dart';
 import 'package:receipt_scanner_flutter/widgets/stat_card.dart';
 import 'package:receipt_scanner_flutter/utils/currency_formatter.dart';
-import 'package:receipt_scanner_flutter/models/receipt.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -24,12 +23,6 @@ class HomeScreen extends StatelessWidget {
     final currentMonthKey = budgetProvider.getCurrentMonthKey();
     final totalBudget = budgetProvider.getTotalBudgetForMonth(currentMonthKey);
     final monthlySpending = receiptProvider.getMonthlySpending();
-
-    // Créer une liste unique de reçus pour éviter les doublons
-    final uniqueReceipts = <String, Receipt>{};
-    for (var receipt in receiptProvider.recentReceipts) {
-      uniqueReceipts[receipt.id] = receipt;
-    }
 
     return Scaffold(
       body: CustomScrollView(
@@ -145,17 +138,21 @@ class HomeScreen extends StatelessWidget {
                         child: CircularProgressIndicator(),
                       ),
                     )
-                  else if (uniqueReceipts.isEmpty)
+                  else if (receiptProvider.recentReceipts.isEmpty)
                     _buildEmptyState(context, languageProvider)
                   else
-                    Column(
-                      children: uniqueReceipts.values.map(
-                        (receipt) => ReceiptCard(
-                          key: ValueKey('receipt_${receipt.id}'),
+                    ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: receiptProvider.recentReceipts.length,
+                      itemBuilder: (context, index) {
+                        final receipt = receiptProvider.recentReceipts[index];
+                        return ReceiptCard(
+                          key: ValueKey('receipt_${receipt.id}_$index'),
                           receipt: receipt,
                           onTap: () => context.go('/receipt/${receipt.id}'),
-                        ),
-                      ).toList(),
+                        );
+                      },
                     ),
                 ],
               ),

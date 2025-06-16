@@ -19,7 +19,6 @@ class MainNavigationScreen extends StatefulWidget {
 
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _selectedIndex = 0;
-  String _currentLocation = '/';
 
   @override
   void didChangeDependencies() {
@@ -34,38 +33,34 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       final router = GoRouter.of(context);
       final location = router.routerDelegate.currentConfiguration.uri.path;
       
-      if (_currentLocation != location) {
-        _currentLocation = location;
-        
-        int newIndex = 0;
-        switch (location) {
-          case '/':
-            newIndex = 0;
-            break;
-          case '/scan':
-            newIndex = 1;
-            break;
-          case '/manual-entry':
-            newIndex = 2;
-            break;
-          case '/budget':
-            newIndex = 3;
-            break;
-          case '/reports':
-            newIndex = 4;
-            break;
-          case '/settings':
-            newIndex = 5;
-            break;
-          default:
-            newIndex = 0;
-        }
-        
-        if (mounted && _selectedIndex != newIndex) {
-          setState(() {
-            _selectedIndex = newIndex;
-          });
-        }
+      int newIndex = 0;
+      switch (location) {
+        case '/':
+          newIndex = 0;
+          break;
+        case '/scan':
+          newIndex = 1;
+          break;
+        case '/manual-entry':
+          newIndex = 2;
+          break;
+        case '/budget':
+          newIndex = 3;
+          break;
+        case '/reports':
+          newIndex = 4;
+          break;
+        case '/settings':
+          newIndex = 5;
+          break;
+        default:
+          newIndex = 0;
+      }
+      
+      if (mounted && _selectedIndex != newIndex) {
+        setState(() {
+          _selectedIndex = newIndex;
+        });
       }
     } catch (e) {
       debugPrint('Error updating navigation index: $e');
@@ -156,8 +151,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     
     return GestureDetector(
       onTap: () => _onNavItemTapped(index),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
+      child: Container(
         padding: EdgeInsets.symmetric(
           horizontal: isSpecial ? AppTheme.spacingM : AppTheme.spacingS,
           vertical: AppTheme.spacingS,

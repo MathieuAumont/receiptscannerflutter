@@ -5,7 +5,6 @@ import 'package:receipt_scanner_flutter/theme/app_theme.dart';
 import 'package:receipt_scanner_flutter/models/receipt.dart';
 import 'package:receipt_scanner_flutter/models/category.dart';
 import 'package:receipt_scanner_flutter/providers/language_provider.dart';
-import 'package:receipt_scanner_flutter/widgets/modern_card.dart';
 import 'package:receipt_scanner_flutter/utils/currency_formatter.dart';
 import 'package:receipt_scanner_flutter/utils/date_formatter.dart';
 
@@ -21,7 +20,6 @@ class ReceiptCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final languageProvider = Provider.of<LanguageProvider>(context);
     final categories = CategoryService.getDefaultCategories();
     final category = categories.firstWhere(
       (cat) => cat.id == receipt.category,
