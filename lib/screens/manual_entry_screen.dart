@@ -1,5 +1,3 @@
-import 'dart:convert';
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
@@ -9,8 +7,6 @@ import 'package:receipt_scanner_flutter/providers/language_provider.dart';
 import 'package:receipt_scanner_flutter/providers/receipt_provider.dart';
 import 'package:receipt_scanner_flutter/models/receipt.dart';
 import 'package:receipt_scanner_flutter/models/category.dart';
-import 'package:receipt_scanner_flutter/widgets/modern_app_bar.dart';
-import 'package:receipt_scanner_flutter/widgets/modern_card.dart';
 import 'package:receipt_scanner_flutter/utils/currency_formatter.dart';
 
 class ManualEntryScreen extends StatefulWidget {
@@ -27,7 +23,7 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
   
   DateTime _selectedDate = DateTime.now();
   String _selectedCategory = 'shopping';
-  List<ManualReceiptItem> _items = [];
+  List<ItemEntry> _items = [];
   
   bool _pricesIncludeTax = false;
   bool _isLoading = false;
@@ -43,25 +39,21 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
     _companyController.dispose();
     _notesController.dispose();
     for (final item in _items) {
-      item.nameController.dispose();
-      item.priceController.dispose();
-      item.quantityController.dispose();
+      item.dispose();
     }
     super.dispose();
   }
 
   void _addItem() {
     setState(() {
-      _items.add(ManualReceiptItem());
+      _items.add(ItemEntry());
     });
   }
 
   void _removeItem(int index) {
     if (_items.length > 1) {
       setState(() {
-        _items[index].nameController.dispose();
-        _items[index].priceController.dispose();
-        _items[index].quantityController.dispose();
+        _items[index].dispose();
         _items.removeAt(index);
       });
     }
@@ -76,7 +68,7 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
     }
     
     if (_pricesIncludeTax) {
-      return total / 1.14975; // 1 + 0.05 + 0.09975
+      return total / 1.14975;
     }
     
     return total;
@@ -97,7 +89,6 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
   Future<void> _saveReceipt() async {
     if (!_formKey.currentState!.validate()) return;
     
-    // Check if at least one item has a name and price
     final validItems = _items.where((item) => 
       item.nameController.text.isNotEmpty && 
       (double.tryParse(item.priceController.text) ?? 0.0) > 0
@@ -117,7 +108,6 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
     });
 
     try {
-      // Générer un ID unique avec timestamp et random
       final uniqueId = '${DateTime.now().millisecondsSinceEpoch}_${DateTime.now().microsecond}';
       
       final receiptItems = validItems.asMap().entries.map((entry) {
@@ -161,10 +151,7 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
             backgroundColor: Colors.green,
           ),
         );
-        await Future.delayed(const Duration(milliseconds: 100));
-        if (mounted) {
-          context.go('/');
-        }
+        context.go('/');
       }
     } catch (e) {
       if (mounted) {
@@ -190,12 +177,11 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
     final categories = CategoryService.getDefaultCategories();
 
     return Scaffold(
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(80),
-        child: ModernAppBar(
-          title: languageProvider.translate('add_receipt'),
-          showBackButton: true,
-          onBackPressed: () => context.go('/'),
+      appBar: AppBar(
+        title: Text(languageProvider.translate('add_receipt')),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/'),
         ),
       ),
       body: Form(
@@ -205,162 +191,148 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // General Information Section
-              ModernCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'General Information',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: AppTheme.spacingM),
-                    
-                    // Date Picker
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: Container(
-                        padding: const EdgeInsets.all(AppTheme.spacingS),
-                        decoration: BoxDecoration(
-                          color: AppTheme.primaryColor.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                        ),
-                        child: Icon(
-                          LucideIcons.calendar,
-                          color: AppTheme.primaryColor,
+              // General Information
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(AppTheme.spacingM),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'General Information',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
-                      title: Text(languageProvider.translate('date')),
-                      subtitle: Text(
-                        '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
-                      ),
-                      onTap: () async {
-                        final date = await showDatePicker(
-                          context: context,
-                          initialDate: _selectedDate,
-                          firstDate: DateTime(2020),
-                          lastDate: DateTime.now(),
-                        );
-                        if (date != null) {
-                          setState(() {
-                            _selectedDate = date;
-                          });
-                        }
-                      },
-                    ),
-                    
-                    const SizedBox(height: AppTheme.spacingM),
-                    
-                    // Store Name
-                    TextFormField(
-                      controller: _companyController,
-                      decoration: InputDecoration(
-                        labelText: languageProvider.translate('store_name'),
-                        prefixIcon: const Icon(LucideIcons.store),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Please enter the store name';
-                        }
-                        return null;
-                      },
-                    ),
-                    
-                    const SizedBox(height: AppTheme.spacingM),
-                    
-                    // Category Selection
-                    Text(
-                      languageProvider.translate('category'),
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: AppTheme.spacingS),
-                    SizedBox(
-                      height: 60,
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: categories.length,
-                        itemBuilder: (context, index) {
-                          final category = categories[index];
-                          final isSelected = _selectedCategory == category.id;
-                          
-                          return Padding(
-                            padding: const EdgeInsets.only(right: AppTheme.spacingS),
-                            child: FilterChip(
-                              selected: isSelected,
-                              label: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(category.icon),
-                                  const SizedBox(width: 4),
-                                  Text(category.name),
-                                ],
-                              ),
-                              onSelected: (selected) {
-                                setState(() {
-                                  _selectedCategory = category.id;
-                                });
-                              },
-                              selectedColor: category.color.withOpacity(0.3),
-                              checkmarkColor: category.color,
-                            ),
+                      const SizedBox(height: AppTheme.spacingM),
+                      
+                      // Date Picker
+                      ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: const Icon(LucideIcons.calendar),
+                        title: Text(languageProvider.translate('date')),
+                        subtitle: Text(
+                          '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
+                        ),
+                        onTap: () async {
+                          final date = await showDatePicker(
+                            context: context,
+                            initialDate: _selectedDate,
+                            firstDate: DateTime(2020),
+                            lastDate: DateTime.now(),
                           );
+                          if (date != null) {
+                            setState(() {
+                              _selectedDate = date;
+                            });
+                          }
                         },
                       ),
-                    ),
-                  ],
+                      
+                      const SizedBox(height: AppTheme.spacingM),
+                      
+                      // Store Name
+                      TextFormField(
+                        controller: _companyController,
+                        decoration: InputDecoration(
+                          labelText: languageProvider.translate('store_name'),
+                          prefixIcon: const Icon(LucideIcons.store),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Please enter the store name';
+                          }
+                          return null;
+                        },
+                      ),
+                      
+                      const SizedBox(height: AppTheme.spacingM),
+                      
+                      // Category Selection
+                      Text(
+                        languageProvider.translate('category'),
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: AppTheme.spacingS),
+                      Wrap(
+                        spacing: AppTheme.spacingS,
+                        children: categories.map((category) {
+                          final isSelected = _selectedCategory == category.id;
+                          
+                          return FilterChip(
+                            selected: isSelected,
+                            label: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(category.icon),
+                                const SizedBox(width: 4),
+                                Text(category.name),
+                              ],
+                            ),
+                            onSelected: (selected) {
+                              setState(() {
+                                _selectedCategory = category.id;
+                              });
+                            },
+                            selectedColor: category.color.withOpacity(0.3),
+                            checkmarkColor: category.color,
+                          );
+                        }).toList(),
+                      ),
+                    ],
+                  ),
                 ),
               ),
               
               const SizedBox(height: AppTheme.spacingM),
               
               // Items Section
-              ModernCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          languageProvider.translate('items'),
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w700,
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(AppTheme.spacingM),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            languageProvider.translate('items'),
+                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
-                        ),
-                        TextButton.icon(
-                          onPressed: _addItem,
-                          icon: const Icon(LucideIcons.plus),
-                          label: Text(languageProvider.translate('add_item')),
-                        ),
-                      ],
-                    ),
-                    
-                    const SizedBox(height: AppTheme.spacingM),
-                    
-                    // Tax Toggle
-                    SwitchListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: const Text('Prices include tax'),
-                      value: _pricesIncludeTax,
-                      onChanged: (value) {
-                        setState(() {
-                          _pricesIncludeTax = value;
-                        });
-                      },
-                    ),
-                    
-                    const SizedBox(height: AppTheme.spacingM),
-                    
-                    // Items List
-                    Column(
-                      children: _items.asMap().entries.map((entry) {
+                          TextButton.icon(
+                            onPressed: _addItem,
+                            icon: const Icon(LucideIcons.plus),
+                            label: Text(languageProvider.translate('add_item')),
+                          ),
+                        ],
+                      ),
+                      
+                      const SizedBox(height: AppTheme.spacingM),
+                      
+                      // Tax Toggle
+                      SwitchListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: const Text('Prices include tax'),
+                        value: _pricesIncludeTax,
+                        onChanged: (value) {
+                          setState(() {
+                            _pricesIncludeTax = value;
+                          });
+                        },
+                      ),
+                      
+                      const SizedBox(height: AppTheme.spacingM),
+                      
+                      // Items List
+                      ..._items.asMap().entries.map((entry) {
                         final index = entry.key;
                         final item = entry.value;
                         
                         return Container(
-                          key: ValueKey('item_container_$index'),
+                          key: ValueKey('item_$index'),
                           margin: const EdgeInsets.only(bottom: AppTheme.spacingM),
                           child: Row(
                             children: [
@@ -415,61 +387,67 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
                             ],
                           ),
                         );
-                      }).toList(),
-                    ),
-                  ],
+                      }),
+                    ],
+                  ),
                 ),
               ),
               
               const SizedBox(height: AppTheme.spacingM),
               
               // Summary Section
-              ModernCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Summary',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(AppTheme.spacingM),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Summary',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: AppTheme.spacingM),
-                    
-                    _buildSummaryRow(
-                      languageProvider.translate('subtotal'),
-                      CurrencyFormatter.format(_calculateSubtotal()),
-                    ),
-                    _buildSummaryRow(
-                      languageProvider.translate('tps'),
-                      CurrencyFormatter.format(_calculateTPS()),
-                    ),
-                    _buildSummaryRow(
-                      languageProvider.translate('tvq'),
-                      CurrencyFormatter.format(_calculateTVQ()),
-                    ),
-                    const Divider(),
-                    _buildSummaryRow(
-                      languageProvider.translate('total'),
-                      CurrencyFormatter.format(_calculateTotal()),
-                      isTotal: true,
-                    ),
-                  ],
+                      const SizedBox(height: AppTheme.spacingM),
+                      
+                      _buildSummaryRow(
+                        languageProvider.translate('subtotal'),
+                        CurrencyFormatter.format(_calculateSubtotal()),
+                      ),
+                      _buildSummaryRow(
+                        languageProvider.translate('tps'),
+                        CurrencyFormatter.format(_calculateTPS()),
+                      ),
+                      _buildSummaryRow(
+                        languageProvider.translate('tvq'),
+                        CurrencyFormatter.format(_calculateTVQ()),
+                      ),
+                      const Divider(),
+                      _buildSummaryRow(
+                        languageProvider.translate('total'),
+                        CurrencyFormatter.format(_calculateTotal()),
+                        isTotal: true,
+                      ),
+                    ],
+                  ),
                 ),
               ),
               
               const SizedBox(height: AppTheme.spacingM),
               
               // Notes Section
-              ModernCard(
-                child: TextFormField(
-                  controller: _notesController,
-                  decoration: const InputDecoration(
-                    labelText: 'Notes (optional)',
-                    alignLabelWithHint: true,
-                    border: InputBorder.none,
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(AppTheme.spacingM),
+                  child: TextFormField(
+                    controller: _notesController,
+                    decoration: const InputDecoration(
+                      labelText: 'Notes (optional)',
+                      alignLabelWithHint: true,
+                      border: InputBorder.none,
+                    ),
+                    maxLines: 3,
                   ),
-                  maxLines: 3,
                 ),
               ),
               
@@ -525,8 +503,14 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
   }
 }
 
-class ManualReceiptItem {
+class ItemEntry {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController priceController = TextEditingController(text: '0');
   final TextEditingController quantityController = TextEditingController(text: '1');
+
+  void dispose() {
+    nameController.dispose();
+    priceController.dispose();
+    quantityController.dispose();
+  }
 }

@@ -6,8 +6,6 @@ import 'package:receipt_scanner_flutter/theme/app_theme.dart';
 import 'package:receipt_scanner_flutter/providers/language_provider.dart';
 import 'package:receipt_scanner_flutter/providers/receipt_provider.dart';
 import 'package:receipt_scanner_flutter/providers/budget_provider.dart';
-import 'package:receipt_scanner_flutter/widgets/receipt_card.dart';
-import 'package:receipt_scanner_flutter/widgets/modern_card.dart';
 import 'package:receipt_scanner_flutter/utils/currency_formatter.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -52,11 +50,11 @@ class HomeScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Stats Cards avec design moderne
+                  // Stats Cards
                   Row(
                     children: [
                       Expanded(
-                        child: _buildModernStatCard(
+                        child: _buildStatCard(
                           context,
                           title: 'Budget',
                           value: CurrencyFormatter.format(totalBudget),
@@ -67,7 +65,7 @@ class HomeScreen extends StatelessWidget {
                       ),
                       const SizedBox(width: AppTheme.spacingM),
                       Expanded(
-                        child: _buildModernStatCard(
+                        child: _buildStatCard(
                           context,
                           title: 'Dépensé',
                           value: CurrencyFormatter.format(monthlySpending),
@@ -152,21 +150,79 @@ class HomeScreen extends StatelessWidget {
 
   Widget _buildReceiptsList(ReceiptProvider receiptProvider) {
     return Column(
-      children: receiptProvider.recentReceipts.asMap().entries.map((entry) {
-        final index = entry.key;
-        final receipt = entry.value;
-        return Builder(
-          builder: (itemContext) => ReceiptCard(
-            key: ValueKey(receipt.id),
-            receipt: receipt,
-            onTap: () => itemContext.go('/receipt/${receipt.id}'),
-          ),
+      children: receiptProvider.recentReceipts.map((receipt) {
+        return Container(
+          key: ValueKey('receipt_${receipt.id}'),
+          margin: const EdgeInsets.only(bottom: AppTheme.spacingM),
+          child: _buildReceiptCard(receipt),
         );
       }).toList(),
     );
   }
 
-  Widget _buildModernStatCard(
+  Widget _buildReceiptCard(receipt) {
+    return Builder(
+      builder: (context) {
+        return GestureDetector(
+          onTap: () => context.go('/receipt/${receipt.id}'),
+          child: Container(
+            padding: const EdgeInsets.all(AppTheme.spacingM),
+            decoration: BoxDecoration(
+              color: Theme.of(context).brightness == Brightness.dark 
+                  ? const Color(0xFF1F2937) 
+                  : AppTheme.cardColor,
+              borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+              boxShadow: AppTheme.cardShadow,
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryColor,
+                    borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                  ),
+                  child: const Center(
+                    child: Text('🛍️', style: TextStyle(fontSize: 24)),
+                  ),
+                ),
+                const SizedBox(width: AppTheme.spacingM),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        receipt.company,
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      Text(
+                        '${receipt.date.day}/${receipt.date.month}/${receipt.date.year}',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppTheme.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Text(
+                  CurrencyFormatter.format(receipt.totalAmount),
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.primaryColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildStatCard(
     BuildContext context, {
     required String title,
     required String value,
@@ -298,7 +354,15 @@ class HomeScreen extends StatelessWidget {
   }
 
   Widget _buildEmptyState(BuildContext context, LanguageProvider languageProvider) {
-    return ModernCard(
+    return Container(
+      padding: const EdgeInsets.all(AppTheme.spacingL),
+      decoration: BoxDecoration(
+        color: Theme.of(context).brightness == Brightness.dark 
+            ? const Color(0xFF1F2937) 
+            : AppTheme.cardColor,
+        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+        boxShadow: AppTheme.cardShadow,
+      ),
       child: Column(
         children: [
           Container(
