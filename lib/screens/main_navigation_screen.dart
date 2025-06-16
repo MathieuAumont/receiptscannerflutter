@@ -17,81 +17,59 @@ class MainNavigationScreen extends StatefulWidget {
   State<MainNavigationScreen> createState() => _MainNavigationScreenState();
 }
 
-class _MainNavigationScreenState extends State<MainNavigationScreen>
-    with TickerProviderStateMixin {
+class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _selectedIndex = 0;
-  late AnimationController _fabAnimationController;
-  late Animation<double> _fabAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _fabAnimationController = AnimationController(
-      duration: const Duration(milliseconds: 300),
-      vsync: this,
-    );
-    _fabAnimation = CurvedAnimation(
-      parent: _fabAnimationController,
-      curve: Curves.easeInOut,
-    );
-    _fabAnimationController.forward();
-  }
+  String _currentLocation = '/';
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Mise à jour sécurisée de l'index basé sur la route actuelle
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _updateSelectedIndexFromRoute();
-      }
-    });
+    _updateSelectedIndexFromRoute();
   }
 
   void _updateSelectedIndexFromRoute() {
     if (!mounted) return;
     
     try {
-      final location = GoRouter.of(context).routerDelegate.currentConfiguration.uri.path;
-      int newIndex = 0;
-      switch (location) {
-        case '/':
-          newIndex = 0;
-          break;
-        case '/scan':
-          newIndex = 1;
-          break;
-        case '/manual-entry':
-          newIndex = 2;
-          break;
-        case '/budget':
-          newIndex = 3;
-          break;
-        case '/reports':
-          newIndex = 4;
-          break;
-        case '/settings':
-          newIndex = 5;
-          break;
-        default:
-          newIndex = 0;
-      }
+      final router = GoRouter.of(context);
+      final location = router.routerDelegate.currentConfiguration.uri.path;
       
-      if (mounted && _selectedIndex != newIndex) {
-        setState(() {
-          _selectedIndex = newIndex;
-        });
+      if (_currentLocation != location) {
+        _currentLocation = location;
+        
+        int newIndex = 0;
+        switch (location) {
+          case '/':
+            newIndex = 0;
+            break;
+          case '/scan':
+            newIndex = 1;
+            break;
+          case '/manual-entry':
+            newIndex = 2;
+            break;
+          case '/budget':
+            newIndex = 3;
+            break;
+          case '/reports':
+            newIndex = 4;
+            break;
+          case '/settings':
+            newIndex = 5;
+            break;
+          default:
+            newIndex = 0;
+        }
+        
+        if (mounted && _selectedIndex != newIndex) {
+          setState(() {
+            _selectedIndex = newIndex;
+          });
+        }
       }
     } catch (e) {
-      // En cas d'erreur, rester sur l'index actuel
       debugPrint('Error updating navigation index: $e');
     }
-  }
-
-  @override
-  void dispose() {
-    _fabAnimationController.dispose();
-    super.dispose();
   }
 
   void _onNavItemTapped(int index) {
@@ -101,12 +79,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
       _selectedIndex = index;
     });
 
-    if (index == 1) {
-      _fabAnimationController.reset();
-      _fabAnimationController.forward();
-    }
-
-    // Navigation vers la route correspondante
     try {
       switch (index) {
         case 0:
@@ -182,44 +154,51 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
   Widget _buildNavItem(int index, IconData icon, String label, {bool isSpecial = false}) {
     final isSelected = _selectedIndex == index;
     
-    return GestureDetector(
-      onTap: () => _onNavItemTapped(index),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: EdgeInsets.symmetric(
-          horizontal: isSpecial ? AppTheme.spacingM : AppTheme.spacingS,
-          vertical: AppTheme.spacingS,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        key: ValueKey('nav_item_$index'), // Clé unique pour chaque bouton
+        onTap: () => _onNavItemTapped(index),
+        borderRadius: BorderRadius.circular(
+          isSpecial ? AppTheme.radiusLarge : AppTheme.radiusMedium,
         ),
-        decoration: BoxDecoration(
-          gradient: isSpecial 
-              ? AppTheme.primaryGradient
-              : isSelected 
-                  ? LinearGradient(
-                      colors: [
-                        AppTheme.primaryColor.withOpacity(0.1),
-                        AppTheme.primaryColor.withOpacity(0.05),
-                      ],
-                    )
-                  : null,
-          borderRadius: BorderRadius.circular(
-            isSpecial ? AppTheme.radiusLarge : AppTheme.radiusMedium,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: EdgeInsets.symmetric(
+            horizontal: isSpecial ? AppTheme.spacingM : AppTheme.spacingS,
+            vertical: AppTheme.spacingS,
           ),
-          boxShadow: isSpecial ? [
-            BoxShadow(
-              color: AppTheme.primaryColor.withOpacity(0.3),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
+          decoration: BoxDecoration(
+            gradient: isSpecial 
+                ? AppTheme.primaryGradient
+                : isSelected 
+                    ? LinearGradient(
+                        colors: [
+                          AppTheme.primaryColor.withOpacity(0.1),
+                          AppTheme.primaryColor.withOpacity(0.05),
+                        ],
+                      )
+                    : null,
+            borderRadius: BorderRadius.circular(
+              isSpecial ? AppTheme.radiusLarge : AppTheme.radiusMedium,
             ),
-          ] : null,
-        ),
-        child: Icon(
-          icon,
-          color: isSpecial 
-              ? Colors.white
-              : isSelected 
-                  ? AppTheme.primaryColor
-                  : AppTheme.textTertiary,
-          size: isSpecial ? 28 : 24,
+            boxShadow: isSpecial ? [
+              BoxShadow(
+                color: AppTheme.primaryColor.withOpacity(0.3),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ] : null,
+          ),
+          child: Icon(
+            icon,
+            color: isSpecial 
+                ? Colors.white
+                : isSelected 
+                    ? AppTheme.primaryColor
+                    : AppTheme.textTertiary,
+            size: isSpecial ? 28 : 24,
+          ),
         ),
       ),
     );

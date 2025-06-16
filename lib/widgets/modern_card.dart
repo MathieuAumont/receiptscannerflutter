@@ -39,18 +39,24 @@ class ModernCard extends StatelessWidget {
           width: 1,
         ) : null,
       ),
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-          child: Padding(
-            padding: padding ?? const EdgeInsets.all(AppTheme.spacingM),
-            child: child,
-          ),
-        ),
-      ),
+      child: onTap != null 
+          ? Material(
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+              child: InkWell(
+                key: ValueKey('modern_card_${hashCode}'), // Clé unique basée sur le hashCode
+                onTap: onTap,
+                borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                child: Padding(
+                  padding: padding ?? const EdgeInsets.all(AppTheme.spacingM),
+                  child: child,
+                ),
+              ),
+            )
+          : Padding(
+              padding: padding ?? const EdgeInsets.all(AppTheme.spacingM),
+              child: child,
+            ),
     );
   }
 }
