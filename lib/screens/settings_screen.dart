@@ -36,43 +36,65 @@ class SettingsScreen extends StatelessWidget {
             ModernCard(
               child: Column(
                 children: [
-                  SwitchListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: Container(
-                      padding: const EdgeInsets.all(AppTheme.spacingS),
-                      decoration: BoxDecoration(
-                        color: AppTheme.primaryColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(AppTheme.spacingS),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                        ),
+                        child: Icon(
+                          LucideIcons.moon,
+                          color: AppTheme.primaryColor,
+                        ),
                       ),
-                      child: Icon(
-                        LucideIcons.moon,
-                        color: AppTheme.primaryColor,
+                      const SizedBox(width: AppTheme.spacingM),
+                      Expanded(
+                        child: Text(languageProvider.translate('dark_mode')),
                       ),
-                    ),
-                    title: Text(languageProvider.translate('dark_mode')),
-                    value: themeProvider.isDarkMode,
-                    onChanged: (value) => themeProvider.toggleTheme(),
+                      Switch(
+                        value: themeProvider.isDarkMode,
+                        onChanged: (value) => themeProvider.toggleTheme(),
+                      ),
+                    ],
                   ),
                   
                   const Divider(),
                   
-                  SwitchListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: Container(
-                      padding: const EdgeInsets.all(AppTheme.spacingS),
-                      decoration: BoxDecoration(
-                        color: AppTheme.primaryColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(AppTheme.spacingS),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                        ),
+                        child: Icon(
+                          LucideIcons.globe,
+                          color: AppTheme.primaryColor,
+                        ),
                       ),
-                      child: Icon(
-                        LucideIcons.globe,
-                        color: AppTheme.primaryColor,
+                      const SizedBox(width: AppTheme.spacingM),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(languageProvider.translate('language')),
+                            Text(
+                              languageProvider.isFrench ? 'Français' : 'English',
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: AppTheme.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    title: Text(languageProvider.translate('language')),
-                    subtitle: Text(languageProvider.isFrench ? 'Français' : 'English'),
-                    value: !languageProvider.isFrench,
-                    onChanged: (value) => languageProvider.toggleLanguage(),
+                      Switch(
+                        value: !languageProvider.isFrench,
+                        onChanged: (value) => languageProvider.toggleLanguage(),
+                      ),
+                    ],
                   ),
                 ],
               ),
