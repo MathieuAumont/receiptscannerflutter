@@ -43,7 +43,7 @@ dependencies:
   permission_handler: ^11.0.1
   
   # Icons
-  lucide_icons: ^0.263.0
+  lucide_icons: ^0.257.0
 
 dev_dependencies:
   flutter_test:
