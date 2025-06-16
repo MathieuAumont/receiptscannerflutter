@@ -44,24 +44,39 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     super.dispose();
   }
 
-  final List<Widget> _screens = [
-    const HomeTab(),
-    const ScanTab(),
-    const ManualEntryTab(),
-    const BudgetTab(),
-    const ReportsTab(),
-    const SettingsTab(),
-  ];
-
   @override
   Widget build(BuildContext context) {
     final languageProvider = Provider.of<LanguageProvider>(context);
 
+    // Seul l'accueil reste dans main_screen, le reste navigue vers les vraies pages
+    if (_selectedIndex != 0) {
+      // Navigation vers les vraies pages
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        switch (_selectedIndex) {
+          case 1:
+            context.go('/scan');
+            break;
+          case 2:
+            context.go('/manual-entry');
+            break;
+          case 3:
+            context.go('/budget');
+            break;
+          case 4:
+            context.go('/reports');
+            break;
+          case 5:
+            context.go('/settings');
+            break;
+        }
+        setState(() {
+          _selectedIndex = 0; // Reset to home
+        });
+      });
+    }
+
     return Scaffold(
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: _screens,
-      ),
+      body: const HomeTab(), // Seul l'accueil reste ici
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: Theme.of(context).cardColor,
@@ -312,152 +327,6 @@ class HomeTab extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-// Placeholder tabs avec le nouveau design
-class ScanTab extends StatelessWidget {
-  const ScanTab({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: ModernCard(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                LucideIcons.camera,
-                size: 64,
-                color: AppTheme.primaryColor,
-              ),
-              const SizedBox(height: AppTheme.spacingM),
-              Text(
-                'Scanner un reçu',
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class ManualEntryTab extends StatelessWidget {
-  const ManualEntryTab({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: ModernCard(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                LucideIcons.plus,
-                size: 64,
-                color: AppTheme.primaryColor,
-              ),
-              const SizedBox(height: AppTheme.spacingM),
-              Text(
-                'Ajouter manuellement',
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class BudgetTab extends StatelessWidget {
-  const BudgetTab({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: ModernCard(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                LucideIcons.wallet,
-                size: 64,
-                color: AppTheme.primaryColor,
-              ),
-              const SizedBox(height: AppTheme.spacingM),
-              Text(
-                'Gérer le budget',
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class ReportsTab extends StatelessWidget {
-  const ReportsTab({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: ModernCard(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                LucideIcons.barChart3,
-                size: 64,
-                color: AppTheme.primaryColor,
-              ),
-              const SizedBox(height: AppTheme.spacingM),
-              Text(
-                'Voir les rapports',
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class SettingsTab extends StatelessWidget {
-  const SettingsTab({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: ModernCard(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                LucideIcons.settings,
-                size: 64,
-                color: AppTheme.primaryColor,
-              ),
-              const SizedBox(height: AppTheme.spacingM),
-              Text(
-                'Paramètres',
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }

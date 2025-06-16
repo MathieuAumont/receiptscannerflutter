@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:receipt_scanner_flutter/theme/app_theme.dart';
 import 'package:receipt_scanner_flutter/providers/language_provider.dart';
 import 'package:receipt_scanner_flutter/providers/budget_provider.dart';
 import 'package:receipt_scanner_flutter/providers/receipt_provider.dart';
 import 'package:receipt_scanner_flutter/models/category.dart';
+import 'package:receipt_scanner_flutter/widgets/modern_app_bar.dart';
+import 'package:receipt_scanner_flutter/widgets/modern_card.dart';
 import 'package:receipt_scanner_flutter/utils/currency_formatter.dart';
 
 class BudgetScreen extends StatefulWidget {
@@ -43,121 +46,125 @@ class _BudgetScreenState extends State<BudgetScreen> {
     final monthlySpending = receiptProvider.getMonthlySpending(_selectedMonth);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(languageProvider.translate('budget')),
-        actions: [
-          if (_isEditing)
-            TextButton(
-              onPressed: _saveBudget,
-              child: Text(languageProvider.translate('save')),
-            )
-          else
-            IconButton(
-              onPressed: () {
-                setState(() {
-                  _isEditing = true;
-                });
-                _initializeControllers(currentBudget, categories);
-              },
-              icon: const Icon(LucideIcons.edit),
-            ),
-        ],
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(80),
+        child: ModernAppBar(
+          title: languageProvider.translate('budget'),
+          showBackButton: true,
+          actions: [
+            if (_isEditing)
+              TextButton(
+                onPressed: _saveBudget,
+                child: Text(languageProvider.translate('save')),
+              )
+            else
+              IconButton(
+                onPressed: () {
+                  setState(() {
+                    _isEditing = true;
+                  });
+                  _initializeControllers(currentBudget, categories);
+                },
+                icon: const Icon(LucideIcons.edit),
+              ),
+          ],
+        ),
       ),
-      body: Column(
-        children: [
-          // Month Selector
-          Container(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                IconButton(
-                  onPressed: () {
-                    setState(() {
-                      _selectedMonth = DateTime(
-                        _selectedMonth.year,
-                        _selectedMonth.month - 1,
-                      );
-                    });
-                  },
-                  icon: const Icon(LucideIcons.chevronLeft),
-                ),
-                Column(
-                  children: [
-                    Text(
-                      _getMonthName(_selectedMonth),
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(AppTheme.spacingM),
+        child: Column(
+          children: [
+            // Month Selector
+            ModernCard(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  IconButton(
+                    onPressed: () {
+                      setState(() {
+                        _selectedMonth = DateTime(
+                          _selectedMonth.year,
+                          _selectedMonth.month - 1,
+                        );
+                      });
+                    },
+                    icon: const Icon(LucideIcons.chevronLeft),
+                  ),
+                  Column(
+                    children: [
+                      Text(
+                        _getMonthName(_selectedMonth),
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
-                    ),
-                    if (_isCurrentMonth())
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.primary,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Text(
-                          'Current',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
+                      if (_isCurrentMonth())
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppTheme.spacingS,
+                            vertical: AppTheme.spacingXS,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primaryColor,
+                            borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                          ),
+                          child: const Text(
+                            'Current',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
-                      ),
-                  ],
-                ),
-                IconButton(
-                  onPressed: () {
-                    setState(() {
-                      _selectedMonth = DateTime(
-                        _selectedMonth.year,
-                        _selectedMonth.month + 1,
-                      );
-                    });
-                  },
-                  icon: const Icon(LucideIcons.chevronRight),
-                ),
-              ],
+                    ],
+                  ),
+                  IconButton(
+                    onPressed: () {
+                      setState(() {
+                        _selectedMonth = DateTime(
+                          _selectedMonth.year,
+                          _selectedMonth.month + 1,
+                        );
+                      });
+                    },
+                    icon: const Icon(LucideIcons.chevronRight),
+                  ),
+                ],
+              ),
             ),
-          ),
-          
-          // Budget Summary
-          Card(
-            margin: const EdgeInsets.all(16),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
+            
+            const SizedBox(height: AppTheme.spacingM),
+            
+            // Budget Summary
+            ModernCard(
               child: Column(
                 children: [
                   Text(
                     'Total Monthly Budget',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.grey[600],
+                      color: AppTheme.textSecondary,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: AppTheme.spacingS),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
                         CurrencyFormatter.format(monthlySpending),
-                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
+                        style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                       Text(
                         ' / ${CurrencyFormatter.format(totalBudget)}',
                         style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: Colors.grey[600],
+                          color: AppTheme.textSecondary,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: AppTheme.spacingM),
                   LinearProgressIndicator(
                     value: totalBudget > 0 ? (monthlySpending / totalBudget).clamp(0.0, 1.0) : 0.0,
                     backgroundColor: Colors.grey[300],
@@ -165,128 +172,128 @@ class _BudgetScreenState extends State<BudgetScreen> {
                       _getProgressColor(monthlySpending, totalBudget),
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: AppTheme.spacingS),
                   Text(
                     totalBudget > 0 
                         ? '${((monthlySpending / totalBudget) * 100).toStringAsFixed(1)}% used'
                         : 'No budget set',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.grey[600],
+                      color: AppTheme.textSecondary,
                     ),
                   ),
                 ],
               ),
             ),
-          ),
-          
-          // Categories List
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: categories.length,
-              itemBuilder: (context, index) {
-                final category = categories[index];
-                final budgetItem = currentBudget.firstWhere(
-                  (item) => item.categoryId == category.id,
-                  orElse: () => BudgetItem(categoryId: category.id, amount: 0),
-                );
-                
-                final categorySpending = receiptProvider.receipts
-                    .where((receipt) => 
-                        receipt.category == category.id &&
-                        receipt.date.year == _selectedMonth.year &&
-                        receipt.date.month == _selectedMonth.month)
-                    .fold(0.0, (sum, receipt) => sum + receipt.totalAmount);
+            
+            const SizedBox(height: AppTheme.spacingM),
+            
+            // Categories List
+            ...categories.map((category) {
+              final budgetItem = currentBudget.firstWhere(
+                (item) => item.categoryId == category.id,
+                orElse: () => BudgetItem(categoryId: category.id, amount: 0),
+              );
+              
+              final categorySpending = receiptProvider.receipts
+                  .where((receipt) => 
+                      receipt.category == category.id &&
+                      receipt.date.year == _selectedMonth.year &&
+                      receipt.date.month == _selectedMonth.month)
+                  .fold(0.0, (sum, receipt) => sum + receipt.totalAmount);
 
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              width: 40,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                color: category.color.withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Center(
-                                child: Text(
-                                  category.icon,
-                                  style: const TextStyle(fontSize: 18),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    category.name,
-                                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  Text(
-                                    '${CurrencyFormatter.format(categorySpending)} / ${CurrencyFormatter.format(budgetItem.amount)}',
-                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: Colors.grey[600],
-                                    ),
-                                  ),
+              return Padding(
+                padding: const EdgeInsets.only(bottom: AppTheme.spacingS),
+                child: ModernCard(
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            width: 48,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  category.color,
+                                  category.color.withOpacity(0.7),
                                 ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
                               ),
+                              borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
                             ),
-                            if (_isEditing)
-                              SizedBox(
-                                width: 100,
-                                child: TextFormField(
-                                  controller: _controllers[category.id],
-                                  decoration: const InputDecoration(
-                                    prefixText: '\$',
-                                    border: OutlineInputBorder(),
-                                    contentPadding: EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 8,
-                                    ),
-                                  ),
-                                  keyboardType: TextInputType.number,
-                                  textAlign: TextAlign.right,
-                                ),
-                              )
-                            else
-                              Text(
-                                budgetItem.amount > 0 
-                                    ? '${((categorySpending / budgetItem.amount) * 100).toStringAsFixed(0)}%'
-                                    : '0%',
-                                style: TextStyle(
-                                  color: _getProgressColor(categorySpending, budgetItem.amount),
-                                  fontWeight: FontWeight.bold,
-                                ),
+                            child: Center(
+                              child: Text(
+                                category.icon,
+                                style: const TextStyle(fontSize: 20),
                               ),
-                          ],
-                        ),
-                        if (budgetItem.amount > 0) ...[
-                          const SizedBox(height: 12),
-                          LinearProgressIndicator(
-                            value: (categorySpending / budgetItem.amount).clamp(0.0, 1.0),
-                            backgroundColor: Colors.grey[300],
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              _getProgressColor(categorySpending, budgetItem.amount),
                             ),
                           ),
+                          const SizedBox(width: AppTheme.spacingM),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  category.name,
+                                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                Text(
+                                  '${CurrencyFormatter.format(categorySpending)} / ${CurrencyFormatter.format(budgetItem.amount)}',
+                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: AppTheme.textSecondary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (_isEditing)
+                            SizedBox(
+                              width: 100,
+                              child: TextFormField(
+                                controller: _controllers[category.id],
+                                decoration: const InputDecoration(
+                                  prefixText: '\$',
+                                  contentPadding: EdgeInsets.symmetric(
+                                    horizontal: AppTheme.spacingS,
+                                    vertical: AppTheme.spacingS,
+                                  ),
+                                ),
+                                keyboardType: TextInputType.number,
+                                textAlign: TextAlign.right,
+                              ),
+                            )
+                          else
+                            Text(
+                              budgetItem.amount > 0 
+                                  ? '${((categorySpending / budgetItem.amount) * 100).toStringAsFixed(0)}%'
+                                  : '0%',
+                              style: TextStyle(
+                                color: _getProgressColor(categorySpending, budgetItem.amount),
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
                         ],
+                      ),
+                      if (budgetItem.amount > 0) ...[
+                        const SizedBox(height: AppTheme.spacingM),
+                        LinearProgressIndicator(
+                          value: (categorySpending / budgetItem.amount).clamp(0.0, 1.0),
+                          backgroundColor: Colors.grey[300],
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            _getProgressColor(categorySpending, budgetItem.amount),
+                          ),
+                        ),
                       ],
-                    ),
+                    ],
                   ),
-                );
-              },
-            ),
-          ),
-        ],
+                ),
+              );
+            }),
+          ],
+        ),
       ),
     );
   }
@@ -346,8 +353,8 @@ class _BudgetScreenState extends State<BudgetScreen> {
   Color _getProgressColor(double spent, double budget) {
     if (budget == 0) return Colors.grey;
     final percentage = spent / budget;
-    if (percentage >= 1.0) return Colors.red;
-    if (percentage >= 0.8) return Colors.orange;
-    return Colors.green;
+    if (percentage >= 1.0) return AppTheme.errorColor;
+    if (percentage >= 0.8) return AppTheme.warningColor;
+    return AppTheme.successColor;
   }
 }

@@ -2,9 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:receipt_scanner_flutter/theme/app_theme.dart';
 import 'package:receipt_scanner_flutter/providers/language_provider.dart';
 import 'package:receipt_scanner_flutter/providers/receipt_provider.dart';
 import 'package:receipt_scanner_flutter/models/category.dart';
+import 'package:receipt_scanner_flutter/widgets/modern_app_bar.dart';
+import 'package:receipt_scanner_flutter/widgets/modern_card.dart';
+import 'package:receipt_scanner_flutter/widgets/stat_card.dart';
 import 'package:receipt_scanner_flutter/utils/currency_formatter.dart';
 
 class ReportsScreen extends StatelessWidget {
@@ -16,11 +20,15 @@ class ReportsScreen extends StatelessWidget {
     final receiptProvider = Provider.of<ReceiptProvider>(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(languageProvider.translate('reports')),
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(80),
+        child: ModernAppBar(
+          title: languageProvider.translate('reports'),
+          showBackButton: true,
+        ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppTheme.spacingM),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -28,127 +36,94 @@ class ReportsScreen extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        children: [
-                          Text(
-                            'Total Expenses',
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            CurrencyFormatter.format(receiptProvider.totalSpending),
-                            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.primary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                  child: StatCard(
+                    title: 'Total Expenses',
+                    value: CurrencyFormatter.format(receiptProvider.totalSpending),
+                    icon: LucideIcons.dollarSign,
+                    iconColor: AppTheme.primaryColor,
                   ),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: AppTheme.spacingM),
                 Expanded(
-                  child: Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        children: [
-                          Text(
-                            'Number of Receipts',
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            receiptProvider.receipts.length.toString(),
-                            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                  child: StatCard(
+                    title: 'Number of Receipts',
+                    value: receiptProvider.receipts.length.toString(),
+                    icon: LucideIcons.receipt,
+                    iconColor: AppTheme.successColor,
                   ),
                 ),
               ],
             ),
             
-            const SizedBox(height: 24),
+            const SizedBox(height: AppTheme.spacingL),
             
             // Category Breakdown
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(LucideIcons.pieChart),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Category Breakdown',
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    if (receiptProvider.receipts.isNotEmpty)
-                      _buildCategoryChart(context, receiptProvider)
-                    else
-                      const Center(
-                        child: Padding(
-                          padding: EdgeInsets.all(32),
-                          child: Text('No data available'),
+            ModernCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        LucideIcons.pieChart,
+                        color: AppTheme.primaryColor,
+                      ),
+                      const SizedBox(width: AppTheme.spacingS),
+                      Text(
+                        'Category Breakdown',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
-                  ],
-                ),
+                    ],
+                  ),
+                  const SizedBox(height: AppTheme.spacingM),
+                  if (receiptProvider.receipts.isNotEmpty)
+                    _buildCategoryChart(context, receiptProvider)
+                  else
+                    const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(AppTheme.spacingXXL),
+                        child: Text('No data available'),
+                      ),
+                    ),
+                ],
               ),
             ),
             
-            const SizedBox(height: 16),
+            const SizedBox(height: AppTheme.spacingM),
             
             // Monthly Trend
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(LucideIcons.trendingUp),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Monthly Trend',
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    if (receiptProvider.receipts.isNotEmpty)
-                      _buildMonthlyChart(context, receiptProvider)
-                    else
-                      const Center(
-                        child: Padding(
-                          padding: EdgeInsets.all(32),
-                          child: Text('No data available'),
+            ModernCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        LucideIcons.trendingUp,
+                        color: AppTheme.primaryColor,
+                      ),
+                      const SizedBox(width: AppTheme.spacingS),
+                      Text(
+                        'Monthly Trend',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
-                  ],
-                ),
+                    ],
+                  ),
+                  const SizedBox(height: AppTheme.spacingM),
+                  if (receiptProvider.receipts.isNotEmpty)
+                    _buildMonthlyChart(context, receiptProvider)
+                  else
+                    const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(AppTheme.spacingXXL),
+                        child: Text('No data available'),
+                      ),
+                    ),
+                ],
               ),
             ),
           ],
@@ -174,7 +149,7 @@ class ReportsScreen extends StatelessWidget {
             radius: 60,
             titleStyle: const TextStyle(
               fontSize: 12,
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w700,
               color: Colors.white,
             ),
           );
@@ -193,7 +168,7 @@ class ReportsScreen extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppTheme.spacingM),
         ...categories
             .where((category) => categoryTotals[category.id] != null && categoryTotals[category.id]! > 0)
             .map((category) {
@@ -201,7 +176,7 @@ class ReportsScreen extends StatelessWidget {
           final percentage = (amount / receiptProvider.totalSpending) * 100;
           
           return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4),
+            padding: const EdgeInsets.symmetric(vertical: AppTheme.spacingXS),
             child: Row(
               children: [
                 Container(
@@ -212,19 +187,19 @@ class ReportsScreen extends StatelessWidget {
                     shape: BoxShape.circle,
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: AppTheme.spacingS),
                 Expanded(
                   child: Text(category.name),
                 ),
                 Text(
                   CurrencyFormatter.format(amount),
-                  style: const TextStyle(fontWeight: FontWeight.w500),
+                  style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: AppTheme.spacingS),
                 Text(
                   '${percentage.toStringAsFixed(1)}%',
                   style: TextStyle(
-                    color: Colors.grey[600],
+                    color: AppTheme.textSecondary,
                     fontSize: 12,
                   ),
                 ),
@@ -243,7 +218,6 @@ class ReportsScreen extends StatelessWidget {
     // Get last 6 months of data
     for (int i = 5; i >= 0; i--) {
       final month = DateTime(now.year, now.month - i, 1);
-      final monthKey = '${month.year}-${month.month.toString().padLeft(2, '0')}';
       final monthName = _getShortMonthName(month);
       
       final monthlySpending = receiptProvider.receipts
@@ -266,7 +240,7 @@ class ReportsScreen extends StatelessWidget {
         barRods: [
           BarChartRodData(
             toY: entry.value,
-            color: Theme.of(context).colorScheme.primary,
+            color: AppTheme.primaryColor,
             width: 20,
             borderRadius: const BorderRadius.only(
               topLeft: Radius.circular(4),
