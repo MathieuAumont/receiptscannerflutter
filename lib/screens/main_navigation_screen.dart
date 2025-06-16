@@ -29,15 +29,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
   late AnimationController _fabAnimationController;
   late Animation<double> _fabAnimation;
 
-  final List<Widget> _screens = [
-    const HomeScreen(),
-    const ScanScreen(),
-    const ManualEntryScreen(),
-    const BudgetScreen(),
-    const ReportsScreen(),
-    const SettingsScreen(),
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -131,10 +122,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
     final languageProvider = Provider.of<LanguageProvider>(context);
 
     return Scaffold(
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: _screens,
-      ),
+      body: widget.child,
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: Theme.of(context).brightness == Brightness.dark

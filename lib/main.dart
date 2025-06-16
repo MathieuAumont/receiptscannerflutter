@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:receipt_scanner_flutter/theme/app_theme.dart';
 import 'package:receipt_scanner_flutter/providers/theme_provider.dart';
 import 'package:receipt_scanner_flutter/providers/language_provider.dart';
@@ -10,8 +11,20 @@ import 'package:receipt_scanner_flutter/screens/main_navigation_screen.dart';
 import 'package:receipt_scanner_flutter/screens/receipt_details_screen.dart';
 import 'package:receipt_scanner_flutter/screens/analysis_screen.dart';
 import 'package:receipt_scanner_flutter/screens/custom_report_screen.dart';
+import 'package:receipt_scanner_flutter/config/app_config.dart';
+import 'package:receipt_scanner_flutter/screens/home_screen.dart';
+import 'package:receipt_scanner_flutter/screens/scan_screen.dart';
+import 'package:receipt_scanner_flutter/screens/manual_entry_screen.dart';
+import 'package:receipt_scanner_flutter/screens/budget_screen.dart';
+import 'package:receipt_scanner_flutter/screens/reports_screen.dart';
+import 'package:receipt_scanner_flutter/screens/settings_screen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  print('Avant dotenv');
+  await dotenv.load(fileName: ".env");
+  print('Après dotenv');
+  print('API KEY in main: [32m${dotenv.env['OPENAI_API_KEY']}\u001b[0m');
   runApp(const MyApp());
 }
 
@@ -54,27 +67,27 @@ final GoRouter _router = GoRouter(
       routes: [
         GoRoute(
           path: '/',
-          builder: (context, state) => const SizedBox(), // Home content handled by MainNavigationScreen
+          builder: (context, state) => const HomeScreen(),
         ),
         GoRoute(
           path: '/scan',
-          builder: (context, state) => const SizedBox(), // Scan content handled by MainNavigationScreen
+          builder: (context, state) => const ScanScreen(),
         ),
         GoRoute(
           path: '/manual-entry',
-          builder: (context, state) => const SizedBox(), // Manual entry content handled by MainNavigationScreen
+          builder: (context, state) => const ManualEntryScreen(),
         ),
         GoRoute(
           path: '/budget',
-          builder: (context, state) => const SizedBox(), // Budget content handled by MainNavigationScreen
+          builder: (context, state) => const BudgetScreen(),
         ),
         GoRoute(
           path: '/reports',
-          builder: (context, state) => const SizedBox(), // Reports content handled by MainNavigationScreen
+          builder: (context, state) => const ReportsScreen(),
         ),
         GoRoute(
           path: '/settings',
-          builder: (context, state) => const SizedBox(), // Settings content handled by MainNavigationScreen
+          builder: (context, state) => const SettingsScreen(),
         ),
       ],
     ),

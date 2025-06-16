@@ -29,6 +29,8 @@ dependencies:
   
   # HTTP & API
   http: ^1.1.0
+  flutter_dotenv: ^5.1.0
+  openai_dart: ^0.5.0
   
   # Charts
   fl_chart: ^0.65.0
@@ -56,6 +58,7 @@ flutter:
   
   assets:
     - assets/images/
+    - .env
 
 flutter_icons:
   android: "launcher_icon"

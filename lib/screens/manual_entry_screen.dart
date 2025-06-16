@@ -140,7 +140,10 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
             backgroundColor: Colors.green,
           ),
         );
-        context.go('/');
+        await Future.delayed(const Duration(milliseconds: 100));
+        if (mounted) {
+          context.go('/');
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -162,6 +165,8 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // --- DÉBUT DU COMMENTAIRE DU CONTENU ORIGINAL ---
+    /*
     final languageProvider = Provider.of<LanguageProvider>(context);
     final categories = CategoryService.getDefaultCategories();
 
@@ -497,6 +502,12 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
           ),
         ),
       ),
+    );
+    */
+    // --- FIN DU COMMENTAIRE DU CONTENU ORIGINAL ---
+    return Scaffold(
+      appBar: AppBar(title: Text('Test')), 
+      body: Center(child: Text('Page test')), 
     );
   }
 

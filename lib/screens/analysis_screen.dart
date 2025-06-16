@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:receipt_scanner_flutter/providers/language_provider.dart';
+import 'package:receipt_scanner_flutter/providers/receipt_provider.dart';
+import 'package:receipt_scanner_flutter/services/ai_service.dart';
+import 'package:go_router/go_router.dart';
 
 class AnalysisScreen extends StatefulWidget {
   const AnalysisScreen({super.key});
@@ -29,17 +32,38 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
       _answer = null;
     });
 
-    // Simulate AI analysis
-    await Future.delayed(const Duration(seconds: 2));
+    try {
+      final receiptProvider = Provider.of<ReceiptProvider>(context, listen: false);
+      final spendingData = {
+        'totalSpending': receiptProvider.totalSpending,
+        'receipts': receiptProvider.receipts.map((r) => {
+          'date': r.date.toIso8601String(),
+          'amount': r.totalAmount,
+          'category': r.category,
+          'merchant': r.company,
+        }).toList(),
+        'categoryTotals': receiptProvider.getCategoryTotals(),
+      };
 
-    setState(() {
-      _isLoading = false;
-      _answer = 'Based on your spending patterns, here are some insights:\n\n'
-          '• Your largest expense category is groceries, accounting for 35% of your total spending.\n'
-          '• You spent 15% more on dining out this month compared to last month.\n'
-          '• Your transportation costs have decreased by 20% in the last three months.\n'
-          '• Consider setting a budget limit for entertainment expenses to better control your spending.';
-    });
+      final analysis = await AIService.analyzeSpending(
+        _questionController.text.trim(),
+        spendingData,
+      );
+
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _answer = analysis;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _answer = 'Error analyzing spending: $e';
+        });
+      }
+    }
   }
 
   @override
@@ -51,7 +75,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
         title: const Text('Spending Analysis'),
         leading: IconButton(
           icon: const Icon(LucideIcons.arrowLeft),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => context.go('/reports'),
         ),
       ),
       body: Padding(
