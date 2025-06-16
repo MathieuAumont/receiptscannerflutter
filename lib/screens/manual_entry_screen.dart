@@ -27,7 +27,7 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
   
   DateTime _selectedDate = DateTime.now();
   String _selectedCategory = 'shopping';
-  List<ReceiptItem> _items = [];
+  List<ManualReceiptItem> _items = [];
   
   bool _pricesIncludeTax = false;
   bool _isLoading = false;
@@ -42,35 +42,40 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
   void dispose() {
     _companyController.dispose();
     _notesController.dispose();
+    for (final item in _items) {
+      item.nameController.dispose();
+      item.priceController.dispose();
+      item.quantityController.dispose();
+    }
     super.dispose();
   }
 
   void _addItem() {
     setState(() {
-      _items.add(
-        ReceiptItem(
-          id: '${DateTime.now().millisecondsSinceEpoch}_${_items.length}',
-          name: '',
-          price: 0.0,
-          quantity: 1,
-        ),
-      );
+      _items.add(ManualReceiptItem());
     });
   }
 
   void _removeItem(int index) {
     if (_items.length > 1) {
       setState(() {
+        _items[index].nameController.dispose();
+        _items[index].priceController.dispose();
+        _items[index].quantityController.dispose();
         _items.removeAt(index);
       });
     }
   }
 
   double _calculateSubtotal() {
-    double total = _items.fold(0.0, (sum, item) => sum + (item.price * item.quantity));
+    double total = 0.0;
+    for (final item in _items) {
+      final price = double.tryParse(item.priceController.text) ?? 0.0;
+      final quantity = int.tryParse(item.quantityController.text) ?? 1;
+      total += price * quantity;
+    }
     
     if (_pricesIncludeTax) {
-      // Remove taxes from total to get subtotal
       return total / 1.14975; // 1 + 0.05 + 0.09975
     }
     
@@ -94,7 +99,8 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
     
     // Check if at least one item has a name and price
     final validItems = _items.where((item) => 
-      item.name.isNotEmpty && item.price > 0
+      item.nameController.text.isNotEmpty && 
+      (double.tryParse(item.priceController.text) ?? 0.0) > 0
     ).toList();
     
     if (validItems.isEmpty) {
@@ -114,11 +120,22 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
       // Générer un ID unique avec timestamp et random
       final uniqueId = '${DateTime.now().millisecondsSinceEpoch}_${DateTime.now().microsecond}';
       
+      final receiptItems = validItems.asMap().entries.map((entry) {
+        final index = entry.key;
+        final item = entry.value;
+        return ReceiptItem(
+          id: '${uniqueId}_item_$index',
+          name: item.nameController.text.trim(),
+          price: double.tryParse(item.priceController.text) ?? 0.0,
+          quantity: int.tryParse(item.quantityController.text) ?? 1,
+        );
+      }).toList();
+      
       final receipt = Receipt(
         id: uniqueId,
         company: _companyController.text.trim(),
         date: _selectedDate,
-        items: validItems,
+        items: receiptItems,
         subtotal: _calculateSubtotal(),
         taxes: Taxes(
           tps: _calculateTPS(),
@@ -337,34 +354,24 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
                     const SizedBox(height: AppTheme.spacingM),
                     
                     // Items List
-                    ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: _items.length,
-                      itemBuilder: (context, index) {
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: AppTheme.spacingM),
+                    Column(
+                      children: _items.asMap().entries.map((entry) {
+                        final index = entry.key;
+                        final item = entry.value;
+                        
+                        return Container(
+                          key: ValueKey('item_container_$index'),
+                          margin: const EdgeInsets.only(bottom: AppTheme.spacingM),
                           child: Row(
                             children: [
                               // Item Name
                               Expanded(
                                 flex: 2,
                                 child: TextFormField(
-                                  key: ValueKey('item_name_${_items[index].id}'),
-                                  initialValue: _items[index].name,
+                                  controller: item.nameController,
                                   decoration: InputDecoration(
                                     labelText: languageProvider.translate('item_name'),
                                   ),
-                                  onChanged: (value) {
-                                    setState(() {
-                                      _items[index] = ReceiptItem(
-                                        id: _items[index].id,
-                                        name: value,
-                                        price: _items[index].price,
-                                        quantity: _items[index].quantity,
-                                      );
-                                    });
-                                  },
                                 ),
                               ),
                               
@@ -373,23 +380,12 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
                               // Price
                               Expanded(
                                 child: TextFormField(
-                                  key: ValueKey('item_price_${_items[index].id}'),
-                                  initialValue: _items[index].price == 0 ? '' : _items[index].price.toString(),
+                                  controller: item.priceController,
                                   decoration: InputDecoration(
                                     labelText: languageProvider.translate('price'),
                                     prefixText: '\$',
                                   ),
                                   keyboardType: TextInputType.number,
-                                  onChanged: (value) {
-                                    setState(() {
-                                      _items[index] = ReceiptItem(
-                                        id: _items[index].id,
-                                        name: _items[index].name,
-                                        price: double.tryParse(value) ?? 0.0,
-                                        quantity: _items[index].quantity,
-                                      );
-                                    });
-                                  },
                                 ),
                               ),
                               
@@ -399,22 +395,11 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
                               SizedBox(
                                 width: 60,
                                 child: TextFormField(
-                                  key: ValueKey('item_quantity_${_items[index].id}'),
-                                  initialValue: _items[index].quantity.toString(),
+                                  controller: item.quantityController,
                                   decoration: const InputDecoration(
                                     labelText: 'Qty',
                                   ),
                                   keyboardType: TextInputType.number,
-                                  onChanged: (value) {
-                                    setState(() {
-                                      _items[index] = ReceiptItem(
-                                        id: _items[index].id,
-                                        name: _items[index].name,
-                                        price: _items[index].price,
-                                        quantity: int.tryParse(value) ?? 1,
-                                      );
-                                    });
-                                  },
                                 ),
                               ),
                               
@@ -430,7 +415,7 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
                             ],
                           ),
                         );
-                      },
+                      }).toList(),
                     ),
                   ],
                 ),
@@ -538,4 +523,10 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
       ),
     );
   }
+}
+
+class ManualReceiptItem {
+  final TextEditingController nameController = TextEditingController();
+  final TextEditingController priceController = TextEditingController(text: '0');
+  final TextEditingController quantityController = TextEditingController(text: '1');
 }

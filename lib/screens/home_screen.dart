@@ -8,7 +8,6 @@ import 'package:receipt_scanner_flutter/providers/receipt_provider.dart';
 import 'package:receipt_scanner_flutter/providers/budget_provider.dart';
 import 'package:receipt_scanner_flutter/widgets/receipt_card.dart';
 import 'package:receipt_scanner_flutter/widgets/modern_card.dart';
-import 'package:receipt_scanner_flutter/widgets/stat_card.dart';
 import 'package:receipt_scanner_flutter/utils/currency_formatter.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -141,25 +140,29 @@ class HomeScreen extends StatelessWidget {
                   else if (receiptProvider.recentReceipts.isEmpty)
                     _buildEmptyState(context, languageProvider)
                   else
-                    ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: receiptProvider.recentReceipts.length,
-                      itemBuilder: (context, index) {
-                        final receipt = receiptProvider.recentReceipts[index];
-                        return ReceiptCard(
-                          key: ValueKey('receipt_${receipt.id}_$index'),
-                          receipt: receipt,
-                          onTap: () => context.go('/receipt/${receipt.id}'),
-                        );
-                      },
-                    ),
+                    _buildReceiptsList(receiptProvider),
                 ],
               ),
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildReceiptsList(ReceiptProvider receiptProvider) {
+    return Column(
+      children: receiptProvider.recentReceipts.asMap().entries.map((entry) {
+        final index = entry.key;
+        final receipt = entry.value;
+        return Container(
+          key: ValueKey('receipt_container_${receipt.id}'),
+          child: ReceiptCard(
+            receipt: receipt,
+            onTap: () => context.go('/receipt/${receipt.id}'),
+          ),
+        );
+      }).toList(),
     );
   }
 

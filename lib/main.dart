@@ -11,7 +11,6 @@ import 'package:receipt_scanner_flutter/screens/main_navigation_screen.dart';
 import 'package:receipt_scanner_flutter/screens/receipt_details_screen.dart';
 import 'package:receipt_scanner_flutter/screens/analysis_screen.dart';
 import 'package:receipt_scanner_flutter/screens/custom_report_screen.dart';
-import 'package:receipt_scanner_flutter/config/app_config.dart';
 import 'package:receipt_scanner_flutter/screens/home_screen.dart';
 import 'package:receipt_scanner_flutter/screens/scan_screen.dart';
 import 'package:receipt_scanner_flutter/screens/manual_entry_screen.dart';
