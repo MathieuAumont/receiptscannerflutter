@@ -10,6 +10,7 @@ import 'package:receipt_scanner_flutter/models/category.dart';
 import 'package:receipt_scanner_flutter/widgets/modern_card.dart';
 import 'package:receipt_scanner_flutter/widgets/stat_card.dart';
 import 'package:receipt_scanner_flutter/utils/currency_formatter.dart';
+import 'package:receipt_scanner_flutter/screens/monthly_receipts_screen.dart';
 
 class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});
@@ -124,7 +125,14 @@ class _ReportsScreenState extends State<ReportsScreen>
                   value: receiptProvider.receipts.length.toString(),
                   icon: '📄',
                   color: const Color(0xFF6366F1),
-                  onTap: () => context.go('/analysis'),
+                  onTap: () {
+                    final now = DateTime.now();
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => MonthlyReceiptsScreen(month: now),
+                      ),
+                    );
+                  },
                 ),
               ),
             ],

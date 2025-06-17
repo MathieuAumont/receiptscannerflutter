@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:receipt_scanner_flutter/services/storage_service.dart';
 
 class Category {
   final String id;
@@ -89,5 +90,11 @@ class CategoryService {
       (cat) => cat.id == id,
       orElse: () => getDefaultCategories().firstWhere((cat) => cat.id == 'other'),
     );
+  }
+
+  static Future<List<Category>> getAllCategories(StorageService storageService) async {
+    final custom = await storageService.getCustomCategories();
+    final defaults = getDefaultCategories();
+    return [...defaults, ...custom];
   }
 }

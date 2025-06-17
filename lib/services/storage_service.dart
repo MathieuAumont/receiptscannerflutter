@@ -1,9 +1,11 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:receipt_scanner_flutter/models/receipt.dart';
+import 'package:receipt_scanner_flutter/models/category.dart';
 
 class StorageService {
   static const String _receiptsKey = 'receipts';
+  static const String _categoriesKey = 'custom_categories';
 
   Future<List<Receipt>> getReceipts() async {
     try {
@@ -101,5 +103,31 @@ class StorageService {
     } catch (e) {
       throw Exception('Failed to clear data: $e');
     }
+  }
+
+  Future<List<Category>> getCustomCategories() async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonStr = prefs.getString(_categoriesKey);
+    if (jsonStr == null || jsonStr.isEmpty) return [];
+    final List<dynamic> decoded = json.decode(jsonStr);
+    return decoded.map((e) => Category.fromJson(e)).toList();
+  }
+
+  Future<void> saveCustomCategories(List<Category> categories) async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonStr = json.encode(categories.map((c) => c.toJson()).toList());
+    await prefs.setString(_categoriesKey, jsonStr);
+  }
+
+  Future<void> addCustomCategory(Category category) async {
+    final categories = await getCustomCategories();
+    categories.add(category);
+    await saveCustomCategories(categories);
+  }
+
+  Future<void> deleteCustomCategory(String id) async {
+    final categories = await getCustomCategories();
+    categories.removeWhere((c) => c.id == id);
+    await saveCustomCategories(categories);
   }
 }

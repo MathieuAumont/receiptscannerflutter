@@ -9,6 +9,7 @@ import 'package:receipt_scanner_flutter/models/category.dart';
 import 'package:receipt_scanner_flutter/widgets/modern_app_bar.dart';
 import 'package:receipt_scanner_flutter/widgets/modern_card.dart';
 import 'package:receipt_scanner_flutter/utils/currency_formatter.dart';
+import 'package:receipt_scanner_flutter/screens/monthly_receipts_screen.dart';
 
 class BudgetScreen extends StatefulWidget {
   const BudgetScreen({super.key});
@@ -138,51 +139,60 @@ class _BudgetScreenState extends State<BudgetScreen> {
             const SizedBox(height: AppTheme.spacingM),
             
             // Budget Summary
-            ModernCard(
-              child: Column(
-                children: [
-                  Text(
-                    languageProvider.translate('total_monthly_budget'),
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppTheme.textSecondary,
-                    ),
+            GestureDetector(
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => MonthlyReceiptsScreen(month: _selectedMonth),
                   ),
-                  const SizedBox(height: AppTheme.spacingS),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        CurrencyFormatter.format(monthlySpending),
-                        style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
+                );
+              },
+              child: ModernCard(
+                child: Column(
+                  children: [
+                    Text(
+                      languageProvider.translate('total_monthly_budget'),
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppTheme.textSecondary,
                       ),
-                      Text(
-                        ' / ${CurrencyFormatter.format(totalBudget)}',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: AppTheme.textSecondary,
+                    ),
+                    const SizedBox(height: AppTheme.spacingS),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          CurrencyFormatter.format(monthlySpending),
+                          style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
+                        Text(
+                          ' / ${CurrencyFormatter.format(totalBudget)}',
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            color: AppTheme.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppTheme.spacingM),
+                    LinearProgressIndicator(
+                      value: totalBudget > 0 ? (monthlySpending / totalBudget).clamp(0.0, 1.0) : 0.0,
+                      backgroundColor: Colors.grey[300],
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        _getProgressColor(monthlySpending, totalBudget),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: AppTheme.spacingM),
-                  LinearProgressIndicator(
-                    value: totalBudget > 0 ? (monthlySpending / totalBudget).clamp(0.0, 1.0) : 0.0,
-                    backgroundColor: Colors.grey[300],
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      _getProgressColor(monthlySpending, totalBudget),
                     ),
-                  ),
-                  const SizedBox(height: AppTheme.spacingS),
-                  Text(
-                    totalBudget > 0 
-                        ? languageProvider.translate('percent_used').replaceAll('{percent}', ((monthlySpending / totalBudget) * 100).toStringAsFixed(1))
-                        : languageProvider.translate('no_budget_set'),
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppTheme.textSecondary,
+                    const SizedBox(height: AppTheme.spacingS),
+                    Text(
+                      totalBudget > 0 
+                          ? languageProvider.translate('percent_used').replaceAll('{percent}', ((monthlySpending / totalBudget) * 100).toStringAsFixed(1))
+                          : languageProvider.translate('no_budget_set'),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppTheme.textSecondary,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
             

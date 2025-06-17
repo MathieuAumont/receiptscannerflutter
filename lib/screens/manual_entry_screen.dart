@@ -7,6 +7,7 @@ import 'package:receipt_scanner_flutter/providers/receipt_provider.dart';
 import 'package:receipt_scanner_flutter/models/receipt.dart';
 import 'package:receipt_scanner_flutter/models/category.dart';
 import 'package:receipt_scanner_flutter/utils/currency_formatter.dart';
+import 'package:receipt_scanner_flutter/providers/category_provider.dart';
 
 class ManualEntryScreen extends StatefulWidget {
   final Receipt? receipt;
@@ -276,8 +277,14 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
       final receiptItems = validItems.asMap().entries.map((entry) {
         final index = entry.key;
         final item = entry.value;
+        String itemId;
+        if (widget.receipt != null && widget.receipt!.items.length > index) {
+          itemId = widget.receipt!.items[index].id;
+        } else {
+          itemId = '${uniqueId}_item_$index';
+        }
         return ReceiptItem(
-          id: widget.receipt?.items[entry.key].id ?? '${uniqueId}_item_$index',
+          id: itemId,
           name: item.nameController.text.trim(),
           price: double.tryParse(item.priceController.text) ?? 0.0,
           quantity: int.tryParse(item.quantityController.text) ?? 1,
@@ -327,7 +334,7 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(languageProvider.translate('error_saving_receipt')),
+            content: Text('${languageProvider.translate('error_saving_receipt')}\n$e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -344,7 +351,13 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
   @override
   Widget build(BuildContext context) {
     final languageProvider = Provider.of<LanguageProvider>(context);
-    final categories = CategoryService.getDefaultCategories();
+    final categoryProvider = Provider.of<CategoryProvider>(context);
+    final categories = categoryProvider.categories;
+
+    // Charger les catégories si la liste est vide
+    if (categories.isEmpty) {
+      categoryProvider.loadCategories();
+    }
 
     return Scaffold(
       appBar: AppBar(

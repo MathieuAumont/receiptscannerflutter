@@ -9,6 +9,7 @@ import 'package:receipt_scanner_flutter/widgets/modern_app_bar.dart';
 import 'package:receipt_scanner_flutter/widgets/modern_card.dart';
 import 'package:receipt_scanner_flutter/services/storage_service.dart';
 import 'package:receipt_scanner_flutter/screens/help_support_screen.dart';
+import 'package:receipt_scanner_flutter/screens/manage_categories_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -231,6 +232,21 @@ class SettingsScreen extends StatelessWidget {
                   ),
                 ],
               ),
+            ),
+            
+            const SizedBox(height: AppTheme.spacingL),
+            
+            ListTile(
+              leading: const Icon(Icons.category),
+              title: Text(languageProvider.translate('manage_categories')),
+              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => ManageCategoriesScreen(),
+                  ),
+                );
+              },
             ),
             
             const SizedBox(height: AppTheme.spacingXXL),
