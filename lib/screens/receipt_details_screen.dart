@@ -34,8 +34,8 @@ class ReceiptDetailsScreen extends StatelessWidget {
             showBackButton: true,
           ),
         ),
-        body: const Center(
-          child: Text('Receipt not found'),
+        body: Center(
+          child: Text(languageProvider.translate('receipt_not_found')),
         ),
       );
     }
@@ -63,14 +63,14 @@ class ReceiptDetailsScreen extends StatelessWidget {
               onSelected: (value) async {
                 switch (value) {
                   case 'edit':
-                    // TODO: Navigate to edit screen
+                    context.go('/manual-entry', extra: receipt);
                     break;
                   case 'delete':
                     final confirmed = await showDialog<bool>(
                       context: context,
                       builder: (context) => AlertDialog(
-                        title: const Text('Delete Receipt'),
-                        content: const Text('Are you sure you want to delete this receipt? This action cannot be undone.'),
+                        title: Text(languageProvider.translate('delete_receipt')),
+                        content: Text(languageProvider.translate('delete_receipt_confirmation')),
                         actions: [
                           TextButton(
                             onPressed: () => Navigator.of(context).pop(false),
@@ -243,7 +243,7 @@ class ReceiptDetailsScreen extends StatelessWidget {
                                   style: Theme.of(context).textTheme.bodyLarge,
                                 ),
                                 Text(
-                                  'Qty: ${item.quantity}',
+                                  '${languageProvider.translate('quantity')}: ${item.quantity}',
                                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                     color: AppTheme.textSecondary,
                                   ),
@@ -273,7 +273,7 @@ class ReceiptDetailsScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Summary',
+                    languageProvider.translate('summary'),
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.w700,
                     ),
@@ -313,7 +313,7 @@ class ReceiptDetailsScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Notes',
+                      languageProvider.translate('notes'),
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.w700,
                       ),

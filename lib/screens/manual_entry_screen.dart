@@ -9,10 +9,125 @@ import 'package:receipt_scanner_flutter/models/category.dart';
 import 'package:receipt_scanner_flutter/utils/currency_formatter.dart';
 
 class ManualEntryScreen extends StatefulWidget {
-  const ManualEntryScreen({super.key});
+  final Receipt? receipt;
+
+  const ManualEntryScreen({
+    super.key,
+    this.receipt,
+  });
 
   @override
   State<ManualEntryScreen> createState() => _ManualEntryScreenState();
+}
+
+class ItemEntry {
+  final TextEditingController nameController;
+  final TextEditingController priceController;
+  final TextEditingController quantityController;
+
+  ItemEntry({
+    required this.nameController,
+    required this.priceController,
+    required this.quantityController,
+  });
+
+  void dispose() {
+    nameController.dispose();
+    priceController.dispose();
+    quantityController.dispose();
+  }
+}
+
+class ItemEntryWidget extends StatelessWidget {
+  final ItemEntry item;
+  final VoidCallback onRemove;
+  final bool showRemoveButton;
+
+  const ItemEntryWidget({
+    super.key,
+    required this.item,
+    required this.onRemove,
+    required this.showRemoveButton,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final languageProvider = Provider.of<LanguageProvider>(context);
+    return Container(
+      padding: const EdgeInsets.all(16.0),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: item.nameController,
+                  decoration: InputDecoration(
+                    labelText: languageProvider.translate('item_name'),
+                    border: const OutlineInputBorder(),
+                  ),
+                ),
+              ),
+              if (showRemoveButton) ...[
+                const SizedBox(width: 8),
+                IconButton(
+                  onPressed: onRemove,
+                  icon: const Icon(Icons.delete, color: Colors.red),
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                flex: 2,
+                child: TextField(
+                  controller: item.priceController,
+                  decoration: InputDecoration(
+                    labelText: languageProvider.translate('price'),
+                    border: const OutlineInputBorder(),
+                    prefixText: '\$ ',
+                  ),
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  onChanged: (value) {
+                    if (value.isNotEmpty) {
+                      // Vérifier s'il y a plus de 2 décimales
+                      final parts = value.split('.');
+                      if (parts.length > 1 && parts[1].length > 2) {
+                        // Tronquer à 2 décimales
+                        final truncated = '${parts[0]}.${parts[1].substring(0, 2)}';
+                        item.priceController.value = TextEditingValue(
+                          text: truncated,
+                          selection: TextSelection.collapsed(offset: truncated.length),
+                        );
+                      }
+                    }
+                  },
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: TextField(
+                  controller: item.quantityController,
+                  decoration: InputDecoration(
+                    labelText: languageProvider.translate('quantity'),
+                    border: const OutlineInputBorder(),
+                  ),
+                  keyboardType: TextInputType.number,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _ManualEntryScreenState extends State<ManualEntryScreen> {
@@ -20,16 +135,34 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
   final _notesController = TextEditingController();
   
   DateTime _selectedDate = DateTime.now();
-  String _selectedCategory = 'shopping';
-  List<ItemEntry> _items = [];
+  String _selectedCategory = CategoryService.getDefaultCategories().first.id;
+  final List<ItemEntry> _items = [];
   
-  bool _pricesIncludeTax = false;
+  bool _pricesIncludeTax = true;
   bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    _addItem();
+    if (widget.receipt != null) {
+      _companyController.text = widget.receipt!.company;
+      _notesController.text = widget.receipt!.notes ?? '';
+      _selectedDate = widget.receipt!.date;
+      _selectedCategory = widget.receipt!.category;
+      _items.addAll(widget.receipt!.items.map((item) => ItemEntry(
+        nameController: TextEditingController(text: item.name),
+        priceController: TextEditingController(text: item.price.toString()),
+        quantityController: TextEditingController(text: item.quantity.toString()),
+      )));
+    } else {
+      _addItem();
+    }
+
+    // Ajouter les listeners pour les calculs automatiques
+    for (var item in _items) {
+      item.priceController.addListener(_updateCalculations);
+      item.quantityController.addListener(_updateCalculations);
+    }
   }
 
   @override
@@ -37,54 +170,68 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
     _companyController.dispose();
     _notesController.dispose();
     for (final item in _items) {
+      item.priceController.removeListener(_updateCalculations);
+      item.quantityController.removeListener(_updateCalculations);
       item.dispose();
     }
     super.dispose();
   }
 
   void _addItem() {
+    final newItem = ItemEntry(
+      nameController: TextEditingController(),
+      priceController: TextEditingController(),
+      quantityController: TextEditingController(text: '1'),
+    );
+    
+    // Ajouter les listeners pour le nouvel item
+    newItem.priceController.addListener(_updateCalculations);
+    newItem.quantityController.addListener(_updateCalculations);
+    
     setState(() {
-      _items.add(ItemEntry(onChanged: _updateCalculations));
+      _items.add(newItem);
     });
   }
 
   void _removeItem(int index) {
-    if (_items.length > 1) {
+    setState(() {
+      // Retirer les listeners avant de supprimer l'item
+      _items[index].priceController.removeListener(_updateCalculations);
+      _items[index].quantityController.removeListener(_updateCalculations);
+      _items[index].dispose();
+      _items.removeAt(index);
+      _updateCalculations();
+    });
+  }
+
+  void _updateCalculations() {
+    if (mounted) {
       setState(() {
-        _items[index].dispose();
-        _items.removeAt(index);
-        _updateCalculations();
+        // Force la mise à jour de l'interface
       });
     }
   }
 
-  void _updateCalculations() {
-    setState(() {
-      // Force rebuild to update calculations
+  double _calculateSubtotal() {
+    return _items.fold(0.0, (sum, item) {
+      final price = double.tryParse(item.priceController.text.replaceAll(RegExp(r'[^\d.]'), '')) ?? 0.0;
+      final quantity = int.tryParse(item.quantityController.text) ?? 1;
+      return sum + (price * quantity);
     });
   }
 
-  double _calculateSubtotal() {
-    double total = 0.0;
-    for (final item in _items) {
-      final price = double.tryParse(item.priceController.text) ?? 0.0;
-      final quantity = int.tryParse(item.quantityController.text) ?? 1;
-      total += price * quantity;
-    }
-    
-    if (_pricesIncludeTax) {
-      return total / 1.14975;
-    }
-    
-    return total;
-  }
-
   double _calculateTPS() {
-    return _calculateSubtotal() * 0.05;
+    if (!_pricesIncludeTax) {
+      return _calculateSubtotal() * 0.05;
+    }
+    return 0.0;
   }
 
   double _calculateTVQ() {
-    return _calculateSubtotal() * 0.09975;
+    if (!_pricesIncludeTax) {
+      return _calculateSubtotal() * 0.09975;
+    }
+    return 0.0;
   }
 
   double _calculateTotal() {
@@ -92,32 +239,29 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
   }
 
   Future<void> _saveReceipt() async {
-    final validItems = _items.where((item) => 
-      item.nameController.text.isNotEmpty && 
-      (double.tryParse(item.priceController.text) ?? 0.0) > 0
-    ).toList();
-    
-    if (validItems.isEmpty) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Veuillez ajouter au moins un article avec un nom et un prix'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+    final languageProvider = Provider.of<LanguageProvider>(context, listen: false);
+    if (_companyController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(languageProvider.translate('enter_store_name')),
+          backgroundColor: Colors.red,
+        ),
+      );
       return;
     }
 
-    if (_companyController.text.trim().isEmpty) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Veuillez entrer le nom du magasin'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+    final validItems = _items.where((item) => 
+      item.nameController.text.trim().isNotEmpty && 
+      item.priceController.text.trim().isNotEmpty
+    ).toList();
+
+    if (validItems.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(languageProvider.translate('add_at_least_one_item')),
+          backgroundColor: Colors.red,
+        ),
+      );
       return;
     }
 
@@ -127,13 +271,13 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
 
     try {
       final now = DateTime.now();
-      final uniqueId = '${now.millisecondsSinceEpoch}_${now.microsecond}_${_companyController.text.hashCode}';
+      final uniqueId = widget.receipt?.id ?? '${now.millisecondsSinceEpoch}_${now.microsecond}_${_companyController.text.hashCode}';
       
       final receiptItems = validItems.asMap().entries.map((entry) {
         final index = entry.key;
         final item = entry.value;
         return ReceiptItem(
-          id: '${uniqueId}_item_$index',
+          id: widget.receipt?.items[entry.key].id ?? '${uniqueId}_item_$index',
           name: item.nameController.text.trim(),
           price: double.tryParse(item.priceController.text) ?? 0.0,
           quantity: int.tryParse(item.quantityController.text) ?? 1,
@@ -153,7 +297,7 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
         totalAmount: _calculateTotal(),
         category: _selectedCategory,
         notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
-        metadata: ReceiptMetadata(
+        metadata: widget.receipt?.metadata ?? ReceiptMetadata(
           processedAt: DateTime.now(),
           ocrEngine: 'manual',
           version: '1.0',
@@ -162,23 +306,28 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
       );
 
       if (mounted) {
-        await Provider.of<ReceiptProvider>(context, listen: false).addReceipt(receipt);
+        final receiptProvider = Provider.of<ReceiptProvider>(context, listen: false);
+        if (widget.receipt != null) {
+          await receiptProvider.updateReceipt(receipt);
+        } else {
+          await receiptProvider.addReceipt(receipt);
+        }
         
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Reçu sauvegardé avec succès!'),
+            SnackBar(
+              content: Text(languageProvider.translate(widget.receipt != null ? 'receipt_updated' : 'receipt_saved_success')),
               backgroundColor: Colors.green,
             ),
           );
-          context.go('/');
+          context.push('/');
         }
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erreur lors de la sauvegarde: $e'),
+            content: Text(languageProvider.translate('error_saving_receipt')),
             backgroundColor: Colors.red,
           ),
         );
@@ -199,10 +348,10 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(languageProvider.translate('add_receipt')),
+        title: Text(languageProvider.translate(widget.receipt != null ? 'edit_receipt' : 'add_receipt')),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go('/'),
+          onPressed: () => context.push('/'),
         ),
       ),
       body: SingleChildScrollView(
@@ -223,7 +372,7 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
                         Icon(Icons.info_outline, color: AppTheme.primaryColor),
                         const SizedBox(width: AppTheme.spacingS),
                         Text(
-                          'Informations générales',
+                          languageProvider.translate('general_info'),
                           style: Theme.of(context).textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.w700,
                             color: AppTheme.primaryColor,
@@ -302,7 +451,7 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
                             children: [
                               Text(category.icon),
                               const SizedBox(width: 4),
-                              Text(category.name),
+                              Text(languageProvider.translate('category_${category.id}')),
                             ],
                           ),
                           onSelected: (selected) {
@@ -374,7 +523,7 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              'Les prix incluent les taxes',
+                              languageProvider.translate('prices_include_tax'),
                               style: TextStyle(
                                 fontWeight: FontWeight.w600,
                                 color: AppTheme.primaryColor,
@@ -419,7 +568,7 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
                             Row(
                               children: [
                                 Text(
-                                  'Article ${index + 1}',
+                                  '${languageProvider.translate('item')} ${index + 1}',
                                   style: const TextStyle(
                                     fontWeight: FontWeight.w600,
                                     fontSize: 16,
@@ -503,7 +652,6 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
                                       ),
                                     ),
                                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                    onChanged: (value) => _updateCalculations(),
                                   ),
                                 ),
                                 
@@ -514,7 +662,7 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
                                   child: TextFormField(
                                     controller: item.quantityController,
                                     decoration: InputDecoration(
-                                      labelText: 'Qté',
+                                      labelText: languageProvider.translate('quantity'),
                                       prefixIcon: const Icon(Icons.numbers, size: 20),
                                       border: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(8),
@@ -525,7 +673,6 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
                                       ),
                                     ),
                                     keyboardType: TextInputType.number,
-                                    onChanged: (value) => _updateCalculations(),
                                   ),
                                 ),
                               ],
@@ -555,7 +702,7 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
                         Icon(Icons.calculate, color: AppTheme.primaryColor),
                         const SizedBox(width: AppTheme.spacingS),
                         Text(
-                          'Résumé',
+                          languageProvider.translate('summary'),
                           style: Theme.of(context).textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.w700,
                             color: AppTheme.primaryColor,
@@ -616,7 +763,7 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
                         Icon(Icons.note, color: AppTheme.primaryColor),
                         const SizedBox(width: AppTheme.spacingS),
                         Text(
-                          'Notes (optionnel)',
+                          languageProvider.translate('notes_optional'),
                           style: Theme.of(context).textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.w600,
                             color: AppTheme.primaryColor,
@@ -628,7 +775,7 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
                     TextFormField(
                       controller: _notesController,
                       decoration: InputDecoration(
-                        hintText: 'Ajouter des notes sur ce reçu...',
+                        hintText: languageProvider.translate('add_notes'),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
@@ -655,10 +802,10 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
                   elevation: 3,
                 ),
                 child: _isLoading
-                    ? const Row(
+                    ? Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          SizedBox(
+                          const SizedBox(
                             width: 20,
                             height: 20,
                             child: CircularProgressIndicator(
@@ -666,8 +813,8 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
                               color: Colors.white,
                             ),
                           ),
-                          SizedBox(width: 12),
-                          Text('Sauvegarde en cours...'),
+                          const SizedBox(width: 12),
+                          Text(languageProvider.translate('saving')),
                         ],
                       )
                     : Row(
@@ -715,24 +862,5 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
         ],
       ),
     );
-  }
-}
-
-class ItemEntry {
-  final TextEditingController nameController = TextEditingController();
-  final TextEditingController priceController = TextEditingController();
-  final TextEditingController quantityController = TextEditingController(text: '1');
-  final VoidCallback? onChanged;
-
-  ItemEntry({this.onChanged}) {
-    nameController.addListener(() => onChanged?.call());
-    priceController.addListener(() => onChanged?.call());
-    quantityController.addListener(() => onChanged?.call());
-  }
-
-  void dispose() {
-    nameController.dispose();
-    priceController.dispose();
-    quantityController.dispose();
   }
 }

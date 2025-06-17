@@ -18,19 +18,35 @@ class MainNavigationScreen extends StatefulWidget {
 
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _selectedIndex = 0;
+  GoRouter? _router;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    final router = GoRouter.of(context);
+    if (_router != router) {
+      _router?.routerDelegate.removeListener(_handleRouteChange);
+      _router = router;
+      _router?.routerDelegate.addListener(_handleRouteChange);
+      _updateSelectedIndexFromRoute();
+    }
+  }
+
+  @override
+  void dispose() {
+    _router?.routerDelegate.removeListener(_handleRouteChange);
+    super.dispose();
+  }
+
+  void _handleRouteChange() {
     _updateSelectedIndexFromRoute();
   }
 
   void _updateSelectedIndexFromRoute() {
-    if (!mounted) return;
+    if (!mounted || _router == null) return;
     
     try {
-      final router = GoRouter.of(context);
-      final location = router.routerDelegate.currentConfiguration.uri.path;
+      final location = _router!.routerDelegate.currentConfiguration.uri.path;
       
       int newIndex = 0;
       switch (location) {
@@ -53,7 +69,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           newIndex = 5;
           break;
         default:
-          newIndex = 0;
+          // Si la route n'est pas dans la barre de navigation, on garde l'index actuel
+          return;
       }
       
       if (mounted && _selectedIndex != newIndex) {

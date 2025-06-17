@@ -8,6 +8,7 @@ import 'package:receipt_scanner_flutter/providers/receipt_provider.dart';
 import 'package:receipt_scanner_flutter/widgets/modern_app_bar.dart';
 import 'package:receipt_scanner_flutter/widgets/modern_card.dart';
 import 'package:receipt_scanner_flutter/services/storage_service.dart';
+import 'package:receipt_scanner_flutter/screens/help_support_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -121,8 +122,8 @@ class SettingsScreen extends StatelessWidget {
                         color: AppTheme.infoColor,
                       ),
                     ),
-                    title: const Text('Storage Used'),
-                    subtitle: Text('${receiptProvider.receipts.length} receipts'),
+                    title: Text(languageProvider.translate('storage_used')),
+                    subtitle: Text(languageProvider.translate('storage_used_subtitle').replaceAll('{count}', receiptProvider.receipts.length.toString())),
                     trailing: const Icon(LucideIcons.chevronRight),
                   ),
                   
@@ -142,12 +143,12 @@ class SettingsScreen extends StatelessWidget {
                       ),
                     ),
                     title: Text(languageProvider.translate('export_data')),
-                    subtitle: const Text('Export receipts as CSV'),
+                    subtitle: Text(languageProvider.translate('export_csv')),
                     trailing: const Icon(LucideIcons.chevronRight),
                     onTap: () {
                       // TODO: Implement export functionality
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Export feature coming soon!')),
+                        SnackBar(content: Text(languageProvider.translate('export_coming_soon'))),
                       );
                     },
                   ),
@@ -171,7 +172,7 @@ class SettingsScreen extends StatelessWidget {
                       languageProvider.translate('clear_all_data'),
                       style: TextStyle(color: AppTheme.errorColor),
                     ),
-                    subtitle: const Text('Delete all receipts and data'),
+                    subtitle: Text(languageProvider.translate('delete_all_data_subtitle')),
                     onTap: () => _showClearDataDialog(context, receiptProvider),
                   ),
                 ],
@@ -199,10 +200,14 @@ class SettingsScreen extends StatelessWidget {
                         color: AppTheme.primaryColor,
                       ),
                     ),
-                    title: const Text('Help & Support'),
+                    title: Text(languageProvider.translate('help_support')),
                     trailing: const Icon(LucideIcons.chevronRight),
                     onTap: () {
-                      // TODO: Navigate to help screen
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => const HelpSupportScreen(),
+                        ),
+                      );
                     },
                   ),
                   
@@ -222,7 +227,7 @@ class SettingsScreen extends StatelessWidget {
                       ),
                     ),
                     title: Text(languageProvider.translate('version')),
-                    subtitle: const Text('1.0.0'),
+                    subtitle: Text(languageProvider.translate('app_version').replaceAll('{version}', '1.0.0')),
                   ),
                 ],
               ),
@@ -233,7 +238,7 @@ class SettingsScreen extends StatelessWidget {
             // Footer
             Center(
               child: Text(
-                'Receipt Scanner Flutter © ${DateTime.now().year}',
+                languageProvider.translate('footer_copyright').replaceAll('{year}', DateTime.now().year.toString()),
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: AppTheme.textTertiary,
                 ),
@@ -267,14 +272,12 @@ class SettingsScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Clear All Data'),
-        content: const Text(
-          'Are you sure you want to delete all receipts and data? This action cannot be undone.',
-        ),
+        title: Text(Provider.of<LanguageProvider>(context, listen: false).translate('clear_all_data')),
+        content: Text(Provider.of<LanguageProvider>(context, listen: false).translate('clear_all_data_confirm')),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
+            child: Text(Provider.of<LanguageProvider>(context, listen: false).translate('cancel')),
           ),
           TextButton(
             onPressed: () async {
@@ -285,8 +288,8 @@ class SettingsScreen extends StatelessWidget {
                 if (context.mounted) {
                   Navigator.of(context).pop();
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('All data cleared successfully'),
+                    SnackBar(
+                      content: Text(Provider.of<LanguageProvider>(context, listen: false).translate('clear_all_data_success')),
                       backgroundColor: Colors.green,
                     ),
                   );
@@ -296,7 +299,7 @@ class SettingsScreen extends StatelessWidget {
                   Navigator.of(context).pop();
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('Error clearing data: $e'),
+                      content: Text(Provider.of<LanguageProvider>(context, listen: false).translate('clear_all_data_error')),
                       backgroundColor: Colors.red,
                     ),
                   );
@@ -304,7 +307,7 @@ class SettingsScreen extends StatelessWidget {
               }
             },
             child: Text(
-              'Delete',
+              Provider.of<LanguageProvider>(context, listen: false).translate('delete'),
               style: TextStyle(color: AppTheme.errorColor),
             ),
           ),

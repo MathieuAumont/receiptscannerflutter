@@ -75,6 +75,19 @@ class CategoryService {
         icon: '🏠',
         color: const Color(0xFF9B59B6),
       ),
+      Category(
+        id: 'other',
+        name: 'Autre',
+        icon: '📄',
+        color: const Color(0xFF95A5A6),
+      ),
     ];
+  }
+
+  static Category getCategoryById(String id) {
+    return getDefaultCategories().firstWhere(
+      (cat) => cat.id == id,
+      orElse: () => getDefaultCategories().firstWhere((cat) => cat.id == 'other'),
+    );
   }
 }

@@ -68,10 +68,10 @@ class _ReportsScreenState extends State<ReportsScreen>
               delegate: _SliverTabBarDelegate(
                 TabBar(
                   controller: _tabController,
-                  tabs: const [
-                    Tab(text: '📊 Analyse'),
-                    Tab(text: '🤖 IA'),
-                    Tab(text: '📋 Rapport'),
+                  tabs: [
+                    Tab(text: languageProvider.translate('tab_analysis')),
+                    Tab(text: languageProvider.translate('tab_ai')),
+                    Tab(text: languageProvider.translate('tab_report')),
                   ],
                   labelColor: AppTheme.primaryColor,
                   unselectedLabelColor: AppTheme.textSecondary,
@@ -99,6 +99,7 @@ class _ReportsScreenState extends State<ReportsScreen>
   }
 
   Widget _buildAnalysisTab(ReceiptProvider receiptProvider) {
+    final languageProvider = Provider.of<LanguageProvider>(context, listen: false);
     return SingleChildScrollView(
       padding: const EdgeInsets.all(AppTheme.spacingM),
       child: Column(
@@ -109,19 +110,21 @@ class _ReportsScreenState extends State<ReportsScreen>
             children: [
               Expanded(
                 child: _buildModernStatCard(
-                  title: 'Total',
+                  title: languageProvider.translate('total'),
                   value: CurrencyFormatter.format(receiptProvider.totalSpending),
                   icon: '💰',
                   color: const Color(0xFF10B981),
+                  onTap: () => context.go('/budget'),
                 ),
               ),
               const SizedBox(width: AppTheme.spacingM),
               Expanded(
                 child: _buildModernStatCard(
-                  title: 'Reçus',
+                  title: languageProvider.translate('receipts'),
                   value: receiptProvider.receipts.length.toString(),
                   icon: '📄',
                   color: const Color(0xFF6366F1),
+                  onTap: () => context.go('/analysis'),
                 ),
               ),
             ],
@@ -139,7 +142,7 @@ class _ReportsScreenState extends State<ReportsScreen>
                     const Text('📊', style: TextStyle(fontSize: 24)),
                     const SizedBox(width: AppTheme.spacingS),
                     Text(
-                      'Répartition par catégorie',
+                      languageProvider.translate('category_breakdown'),
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.w700,
                       ),
@@ -150,10 +153,10 @@ class _ReportsScreenState extends State<ReportsScreen>
                 if (receiptProvider.receipts.isNotEmpty)
                   _buildCategoryChart(receiptProvider)
                 else
-                  const Center(
+                  Center(
                     child: Padding(
-                      padding: EdgeInsets.all(AppTheme.spacingXXL),
-                      child: Text('Aucune donnée disponible'),
+                      padding: const EdgeInsets.all(AppTheme.spacingXXL),
+                      child: Text(languageProvider.translate('no_data_available')),
                     ),
                   ),
               ],
@@ -172,7 +175,7 @@ class _ReportsScreenState extends State<ReportsScreen>
                     const Text('📈', style: TextStyle(fontSize: 24)),
                     const SizedBox(width: AppTheme.spacingS),
                     Text(
-                      'Tendance mensuelle',
+                      languageProvider.translate('monthly_trend'),
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.w700,
                       ),
@@ -183,10 +186,10 @@ class _ReportsScreenState extends State<ReportsScreen>
                 if (receiptProvider.receipts.isNotEmpty)
                   _buildMonthlyChart(receiptProvider)
                 else
-                  const Center(
+                  Center(
                     child: Padding(
-                      padding: EdgeInsets.all(AppTheme.spacingXXL),
-                      child: Text('Aucune donnée disponible'),
+                      padding: const EdgeInsets.all(AppTheme.spacingXXL),
+                      child: Text(languageProvider.translate('no_data_available')),
                     ),
                   ),
               ],
@@ -417,60 +420,74 @@ class _ReportsScreenState extends State<ReportsScreen>
     required String value,
     required String icon,
     required Color color,
+    VoidCallback? onTap,
   }) {
-    return Container(
-      padding: const EdgeInsets.all(AppTheme.spacingM),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            color.withOpacity(0.1),
-            color.withOpacity(0.05),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
-        border: Border.all(
-          color: color.withOpacity(0.2),
-          width: 1,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text(icon, style: const TextStyle(fontSize: 24)),
-              const Spacer(),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppTheme.spacingS,
-                  vertical: AppTheme.spacingXS,
+    return ModernCard(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(AppTheme.spacingM),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    color,
+                    color.withOpacity(0.7),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                ),
-                child: Text(
-                  title,
-                  style: TextStyle(
-                    color: color,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
+                borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                boxShadow: [
+                  BoxShadow(
+                    color: color.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
                   ),
+                ],
+              ),
+              child: Center(
+                child: Text(
+                  icon,
+                  style: const TextStyle(fontSize: 24),
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: AppTheme.spacingM),
-          Text(
-            value,
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-              fontWeight: FontWeight.w800,
-              color: color,
             ),
-          ),
-        ],
+            const SizedBox(height: AppTheme.spacingM),
+            Text(
+              title,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: AppTheme.textSecondary,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: AppTheme.spacingXS),
+            Text(
+              value,
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: AppTheme.textPrimary,
+              ),
+            ),
+            if (onTap != null) ...[
+              const SizedBox(height: AppTheme.spacingS),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Icon(
+                    Icons.arrow_forward_ios,
+                    size: 12,
+                    color: AppTheme.textTertiary,
+                  ),
+                ],
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }

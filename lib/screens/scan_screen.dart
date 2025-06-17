@@ -11,6 +11,7 @@ import 'package:receipt_scanner_flutter/providers/receipt_provider.dart';
 import 'package:receipt_scanner_flutter/services/ai_service.dart';
 import 'package:receipt_scanner_flutter/widgets/modern_app_bar.dart';
 import 'package:receipt_scanner_flutter/models/receipt.dart';
+import 'package:go_router/go_router.dart';
 
 class ScanScreen extends StatefulWidget {
   const ScanScreen({super.key});
@@ -37,8 +38,9 @@ class _ScanScreenState extends State<ScanScreen> {
       _cameras = await availableCameras();
       if (_cameras == null || _cameras!.isEmpty) {
         if (mounted) {
+          final languageProvider = Provider.of<LanguageProvider>(context, listen: false);
           setState(() {
-            _error = 'No cameras available on this device';
+            _error = languageProvider.translate('no_cameras_available');
           });
         }
         return;
@@ -58,15 +60,17 @@ class _ScanScreenState extends State<ScanScreen> {
         }
       } catch (e) {
         if (mounted) {
+          final languageProvider = Provider.of<LanguageProvider>(context, listen: false);
           setState(() {
-            _error = 'Failed to initialize camera: $e';
+            _error = languageProvider.translate('failed_initialize_camera');
           });
         }
       }
     } catch (e) {
       if (mounted) {
+        final languageProvider = Provider.of<LanguageProvider>(context, listen: false);
         setState(() {
-          _error = 'Failed to get camera list: $e';
+          _error = languageProvider.translate('failed_get_camera_list');
         });
       }
     }
@@ -91,8 +95,9 @@ class _ScanScreenState extends State<ScanScreen> {
       await _processImage(image.path);
     } catch (e) {
       if (mounted) {
+        final languageProvider = Provider.of<LanguageProvider>(context, listen: false);
         setState(() {
-          _error = 'Failed to take picture: $e';
+          _error = languageProvider.translate('failed_take_picture');
         });
       }
     } finally {
@@ -118,8 +123,9 @@ class _ScanScreenState extends State<ScanScreen> {
       }
     } catch (e) {
       if (mounted) {
+        final languageProvider = Provider.of<LanguageProvider>(context, listen: false);
         setState(() {
-          _error = 'Failed to pick image: $e';
+          _error = languageProvider.translate('failed_pick_image');
         });
       }
     } finally {
@@ -172,15 +178,17 @@ class _ScanScreenState extends State<ScanScreen> {
       await receiptProvider.addReceipt(receipt);
 
       if (mounted) {
+        final languageProvider = Provider.of<LanguageProvider>(context, listen: false);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Receipt processed successfully!')),
+          SnackBar(content: Text(languageProvider.translate('receipt_processed_success'))),
         );
-        Navigator.of(context).pop();
+        context.go('/home');
       }
     } catch (e) {
       if (mounted) {
+        final languageProvider = Provider.of<LanguageProvider>(context, listen: false);
         setState(() {
-          _error = 'Failed to process receipt: $e';
+          _error = languageProvider.translate('failed_process_receipt');
         });
       }
     }
@@ -355,7 +363,7 @@ class _ScanScreenState extends State<ScanScreen> {
                 borderRadius: BorderRadius.circular(20),
               ),
               child: IconButton(
-                onPressed: () => Navigator.of(context).pop(),
+                onPressed: () => context.go('/home'),
                 icon: const Icon(
                   LucideIcons.arrowLeft,
                   color: Colors.white,

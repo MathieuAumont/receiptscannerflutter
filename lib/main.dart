@@ -17,6 +17,7 @@ import 'package:receipt_scanner_flutter/screens/manual_entry_screen.dart';
 import 'package:receipt_scanner_flutter/screens/budget_screen.dart';
 import 'package:receipt_scanner_flutter/screens/reports_screen.dart';
 import 'package:receipt_scanner_flutter/screens/settings_screen.dart';
+import 'package:receipt_scanner_flutter/models/receipt.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -78,7 +79,7 @@ final GoRouter _router = GoRouter(
         ),
         GoRoute(
           path: '/manual-entry',
-          builder: (context, state) => const ManualEntryScreen(),
+          builder: (context, state) => ManualEntryScreen(receipt: state.extra as Receipt?),
         ),
         GoRoute(
           path: '/budget',

@@ -50,12 +50,12 @@ class _BudgetScreenState extends State<BudgetScreen> {
         preferredSize: const Size.fromHeight(80),
         child: ModernAppBar(
           title: languageProvider.translate('budget'),
-          showBackButton: true,
+          showBackButton: false,
           actions: [
             if (_isEditing)
               TextButton(
                 onPressed: _saveBudget,
-                child: Text(languageProvider.translate('save')),
+                child: Text(languageProvider.translate('save_budget')),
               )
             else
               IconButton(
@@ -66,6 +66,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                   _initializeControllers(currentBudget, categories);
                 },
                 icon: const Icon(LucideIcons.edit),
+                tooltip: languageProvider.translate('edit_budget'),
               ),
           ],
         ),
@@ -93,7 +94,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                   Column(
                     children: [
                       Text(
-                        _getMonthName(_selectedMonth),
+                        languageProvider.translate('month_format').replaceAll('{month}', _getMonthName(_selectedMonth)),
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.w700,
                         ),
@@ -108,9 +109,9 @@ class _BudgetScreenState extends State<BudgetScreen> {
                             color: AppTheme.primaryColor,
                             borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
                           ),
-                          child: const Text(
-                            'Current',
-                            style: TextStyle(
+                          child: Text(
+                            languageProvider.translate('current_month'),
+                            style: const TextStyle(
                               color: Colors.white,
                               fontSize: 10,
                               fontWeight: FontWeight.w600,
@@ -141,7 +142,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
               child: Column(
                 children: [
                   Text(
-                    'Total Monthly Budget',
+                    languageProvider.translate('total_monthly_budget'),
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: AppTheme.textSecondary,
                     ),
@@ -175,8 +176,8 @@ class _BudgetScreenState extends State<BudgetScreen> {
                   const SizedBox(height: AppTheme.spacingS),
                   Text(
                     totalBudget > 0 
-                        ? '${((monthlySpending / totalBudget) * 100).toStringAsFixed(1)}% used'
-                        : 'No budget set',
+                        ? languageProvider.translate('percent_used').replaceAll('{percent}', ((monthlySpending / totalBudget) * 100).toStringAsFixed(1))
+                        : languageProvider.translate('no_budget_set'),
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: AppTheme.textSecondary,
                     ),
@@ -235,15 +236,24 @@ class _BudgetScreenState extends State<BudgetScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  category.name,
+                                  languageProvider.translate('category_${category.id}'),
                                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
-                                Text(
-                                  '${CurrencyFormatter.format(categorySpending)} / ${CurrencyFormatter.format(budgetItem.amount)}',
-                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: AppTheme.textSecondary,
+                                RichText(
+                                  text: TextSpan(
+                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: AppTheme.textSecondary,
+                                    ),
+                                    children: [
+                                      TextSpan(
+                                        text: CurrencyFormatter.format(categorySpending),
+                                        style: const TextStyle(fontWeight: FontWeight.bold),
+                                      ),
+                                      const TextSpan(text: ' / '),
+                                      TextSpan(text: CurrencyFormatter.format(budgetItem.amount)),
+                                    ],
                                   ),
                                 ),
                               ],
@@ -306,34 +316,47 @@ class _BudgetScreenState extends State<BudgetScreen> {
         orElse: () => BudgetItem(categoryId: category.id, amount: 0),
       );
       _controllers[category.id] = TextEditingController(
-        text: budgetItem.amount > 0 ? budgetItem.amount.toStringAsFixed(0) : '',
+        text: budgetItem.amount > 0 ? budgetItem.amount.toString() : '',
       );
     }
   }
 
   Future<void> _saveBudget() async {
+    final languageProvider = Provider.of<LanguageProvider>(context, listen: false);
     final budgetProvider = Provider.of<BudgetProvider>(context, listen: false);
     final categories = CategoryService.getDefaultCategories();
     
-    final budgetItems = categories.map((category) {
-      final controller = _controllers[category.id];
-      final amount = double.tryParse(controller?.text ?? '') ?? 0.0;
-      return BudgetItem(categoryId: category.id, amount: amount);
-    }).toList();
+    try {
+      final budgetItems = _controllers.entries.map((entry) {
+        final amount = double.tryParse(entry.value.text) ?? 0.0;
+        return BudgetItem(
+          categoryId: entry.key,
+          amount: amount,
+        );
+      }).toList();
 
-    await budgetProvider.setBudgetForMonth(_monthKey, budgetItems);
-    
-    setState(() {
-      _isEditing = false;
-    });
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Budget saved successfully!'),
-          backgroundColor: Colors.green,
-        ),
-      );
+      await budgetProvider.setBudgetForMonth(_monthKey, budgetItems);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(languageProvider.translate('budget_updated')),
+            backgroundColor: Colors.green,
+          ),
+        );
+        setState(() {
+          _isEditing = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(languageProvider.translate('budget_update_error')),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
