@@ -161,51 +161,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       
                       const SizedBox(height: AppTheme.spacingXL),
                       
-                      // Actions rapides
-                      ModernCard(
-                        gradient: AppTheme.accentGradient,
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Actions rapides',
-                                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    'Scanner ou ajouter un reçu',
-                                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                      color: Colors.white.withOpacity(0.9),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Row(
-                              children: [
-                                _buildQuickActionButton(
-                                  icon: Icons.camera_alt,
-                                  onTap: () => context.go('/scan'),
-                                ),
-                                const SizedBox(width: 12),
-                                _buildQuickActionButton(
-                                  icon: Icons.add,
-                                  onTap: () => context.go('/manual-entry'),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      
-                      const SizedBox(height: AppTheme.spacingXL),
-                      
                       // Barre de recherche moderne
                       Container(
                         decoration: BoxDecoration(
@@ -430,27 +385,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildQuickActionButton({
-    required IconData icon,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.2),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Icon(
-          icon,
-          color: Colors.white,
-          size: 20,
-        ),
-      ),
-    );
-  }
-
   Widget _buildEmptyState(BuildContext context, LanguageProvider languageProvider) {
     return ModernCard(
       child: Column(
@@ -482,37 +416,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: AppTheme.spacingL),
-          Row(
-            children: [
-              Expanded(
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: AppTheme.primaryGradient,
-                    borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
-                  ),
-                  child: ElevatedButton.icon(
-                    onPressed: () => context.go('/scan'),
-                    icon: const Text('📷'),
-                    label: const Text('Scanner'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.transparent,
-                      shadowColor: Colors.transparent,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: AppTheme.spacingM),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => context.go('/manual-entry'),
-                  icon: const Text('➕'),
-                  label: const Text('Ajouter'),
-                  style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: AppTheme.primaryColor),
-                  ),
-                ),
-              ),
-            ],
+          Text(
+            'Utilisez la navigation en bas pour scanner ou ajouter un reçu',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: AppTheme.textTertiary,
+              fontStyle: FontStyle.italic,
+            ),
+            textAlign: TextAlign.center,
           ),
         ],
       ),
