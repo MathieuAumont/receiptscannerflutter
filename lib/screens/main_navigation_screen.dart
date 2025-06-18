@@ -69,7 +69,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           newIndex = 5;
           break;
         default:
-          // Si la route n'est pas dans la barre de navigation, on garde l'index actuel
           return;
       }
       
@@ -125,15 +124,15 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: Theme.of(context).brightness == Brightness.dark
-              ? const Color(0xFF1F2937)
+              ? const Color(0xFF1A202C)
               : Colors.white,
           borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(AppTheme.radiusLarge),
-            topRight: Radius.circular(AppTheme.radiusLarge),
+            topLeft: Radius.circular(AppTheme.radiusXLarge),
+            topRight: Radius.circular(AppTheme.radiusXLarge),
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.08),
+              color: Colors.black.withOpacity(0.1),
               blurRadius: 20,
               offset: const Offset(0, -8),
             ),
@@ -142,18 +141,18 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(
-              horizontal: AppTheme.spacingM,
-              vertical: AppTheme.spacingS,
+              horizontal: AppTheme.spacingL,
+              vertical: AppTheme.spacingM,
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildNavItem(0, Icons.home, languageProvider.translate('home')),
-                _buildNavItem(1, Icons.camera_alt, languageProvider.translate('scan'), isSpecial: true),
-                _buildNavItem(2, Icons.add, languageProvider.translate('manual_entry')),
-                _buildNavItem(3, Icons.account_balance_wallet, languageProvider.translate('budget')),
-                _buildNavItem(4, Icons.bar_chart, languageProvider.translate('reports')),
-                _buildNavItem(5, Icons.settings, languageProvider.translate('settings')),
+                _buildNavItem(0, Icons.home_rounded, languageProvider.translate('home')),
+                _buildNavItem(1, Icons.camera_alt_rounded, languageProvider.translate('scan'), isSpecial: true),
+                _buildNavItem(2, Icons.add_rounded, languageProvider.translate('manual_entry')),
+                _buildNavItem(3, Icons.account_balance_wallet_rounded, languageProvider.translate('budget')),
+                _buildNavItem(4, Icons.bar_chart_rounded, languageProvider.translate('reports')),
+                _buildNavItem(5, Icons.settings_rounded, languageProvider.translate('settings')),
               ],
             ),
           ),
@@ -167,7 +166,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     
     return GestureDetector(
       onTap: () => _onNavItemTapped(index),
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
         padding: EdgeInsets.symmetric(
           horizontal: isSpecial ? AppTheme.spacingM : AppTheme.spacingS,
           vertical: AppTheme.spacingS,
@@ -178,7 +178,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
               : isSelected 
                   ? LinearGradient(
                       colors: [
-                        AppTheme.primaryColor.withOpacity(0.1),
+                        AppTheme.primaryColor.withOpacity(0.15),
                         AppTheme.primaryColor.withOpacity(0.05),
                       ],
                     )
@@ -194,14 +194,31 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             ),
           ] : null,
         ),
-        child: Icon(
-          icon,
-          color: isSpecial 
-              ? Colors.white
-              : isSelected 
-                  ? AppTheme.primaryColor
-                  : AppTheme.textTertiary,
-          size: isSpecial ? 28 : 24,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              color: isSpecial 
+                  ? Colors.white
+                  : isSelected 
+                      ? AppTheme.primaryColor
+                      : AppTheme.textTertiary,
+              size: isSpecial ? 28 : 24,
+            ),
+            if (!isSpecial) ...[
+              const SizedBox(height: 4),
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                width: isSelected ? 6 : 0,
+                height: 6,
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor,
+                  borderRadius: BorderRadius.circular(3),
+                ),
+              ),
+            ],
+          ],
         ),
       ),
     );

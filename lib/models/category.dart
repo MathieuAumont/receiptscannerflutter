@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:receipt_scanner_flutter/services/storage_service.dart';
+import 'package:receipt_scanner_flutter/theme/app_theme.dart';
 
 class Category {
   final String id;
@@ -44,43 +45,43 @@ class CategoryService {
         id: 'shopping',
         name: 'Shopping',
         icon: '🛍️',
-        color: const Color(0xFFFF6B6B),
+        color: AppTheme.categoryColors[0], // Orange
       ),
       Category(
         id: 'food',
         name: 'Alimentation',
-        icon: '☕',
-        color: const Color(0xFF4ECDC4),
+        icon: '🍽️',
+        color: AppTheme.categoryColors[1], // Violet
       ),
       Category(
         id: 'transport',
         name: 'Transport',
         icon: '🚗',
-        color: const Color(0xFF45B7D1),
+        color: AppTheme.categoryColors[2], // Turquoise
       ),
       Category(
         id: 'entertainment',
         name: 'Loisirs',
         icon: '🎮',
-        color: const Color(0xFF96CEB4),
+        color: AppTheme.categoryColors[3], // Rose
       ),
       Category(
         id: 'health',
         name: 'Santé',
         icon: '❤️',
-        color: const Color(0xFFFF7F50),
+        color: AppTheme.categoryColors[4], // Vert
       ),
       Category(
         id: 'home',
         name: 'Maison',
         icon: '🏠',
-        color: const Color(0xFF9B59B6),
+        color: AppTheme.categoryColors[5], // Bleu
       ),
       Category(
         id: 'other',
         name: 'Autre',
         icon: '📄',
-        color: const Color(0xFF95A5A6),
+        color: AppTheme.categoryColors[6], // Jaune
       ),
     ];
   }

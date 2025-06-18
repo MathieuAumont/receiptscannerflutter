@@ -12,6 +12,7 @@ import 'package:receipt_scanner_flutter/screens/receipt_search_delegate.dart';
 import 'package:receipt_scanner_flutter/screens/receipt_filter_sheet.dart';
 import 'package:receipt_scanner_flutter/providers/category_provider.dart';
 import 'package:receipt_scanner_flutter/widgets/receipt_card.dart';
+import 'package:receipt_scanner_flutter/widgets/modern_card.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -20,13 +21,33 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeOutCubic,
+    ));
+    _animationController.forward();
+  }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _animationController.dispose();
     super.dispose();
   }
 
@@ -55,454 +76,274 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
-      appBar: AppBar(title: Text(languageProvider.translate('receipt_scanner'))),
       body: SafeArea(
-            child: Padding(
-          padding: const EdgeInsets.all(24.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-              const SizedBox(height: 24),
-                  Row(
-                    children: [
-                      Expanded(
-                    child: _buildStatCard(
-                          context,
-                      title: languageProvider.translate('budget'),
-                          value: CurrencyFormatter.format(totalBudget),
-                          icon: '💰',
-                          color: const Color(0xFF10B981),
-                      subtitle: languageProvider.translate('this_month'),
-                      onTap: () => context.go('/budget'),
-                        ),
-                      ),
-                  const SizedBox(width: 16),
-                      Expanded(
-                    child: _buildStatCard(
-                          context,
-                      title: languageProvider.translate('spent'),
-                      value: monthlySpending.toStringAsFixed(2),
-                          icon: '📊',
-                          color: const Color(0xFFF59E0B),
-                      subtitle: totalBudget > 0 ? '${((monthlySpending / totalBudget) * 100).toStringAsFixed(0)}%' : null,
-                        ),
-                      ),
-                    ],
-                  ),
-              const SizedBox(height: 32),
-              // Barre de recherche
-              TextField(
-                controller: _searchController,
-                decoration: InputDecoration(
-                  hintText: languageProvider.translate('search_receipts'),
-                  prefixIcon: const Icon(Icons.search),
-                  suffixIcon: _searchQuery.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(Icons.clear),
-                          onPressed: () {
-                            setState(() {
-                              _searchController.clear();
-                              _searchQuery = '';
-                            });
-                          },
-                        )
-                      : null,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                  ),
-                  filled: true,
-                  fillColor: Theme.of(context).brightness == Brightness.dark
-                      ? const Color(0xFF1F2937)
-                      : Colors.grey[100],
-                ),
-                onChanged: (value) {
-                  setState(() {
-                    _searchQuery = value;
-                  });
-                },
-              ),
-              const SizedBox(height: 24),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        languageProvider.translate('recent_receipts'),
-                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                  IconButton(
-                    icon: Icon(
-                      Icons.filter_list,
-                      color: receiptProvider.hasActiveFilters ? AppTheme.primaryColor : null,
-                    ),
-                    onPressed: () {
-                      showModalBottomSheet(
-                        context: context,
-                        isScrollControlled: true,
-                        builder: (context) => Padding(
-                          padding: EdgeInsets.only(
-                            bottom: MediaQuery.of(context).viewInsets.bottom,
-                          ),
-                          child: ReceiptFilterSheet(
-                            initialFilters: receiptProvider.currentFilters,
-                            onFilterApplied: (filters) {
-                              if (filters.isEmpty) {
-                                receiptProvider.clearFilters();
-                              } else {
-                                receiptProvider.setFilters(filters);
-                              }
-                            },
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              if (filteredReceipts.isEmpty)
-                Text(languageProvider.translate('no_receipts')),
-              Expanded(
-                child: ListView.builder(
-                  itemCount: filteredReceipts.length,
-                  itemBuilder: (context, index) {
-                    final receipt = filteredReceipts[index];
-                    final category = categories.firstWhere(
-                      (cat) => cat.id == receipt.category,
-                      orElse: () => categories.isNotEmpty
-                          ? categories.first
-                          : Category(
-                              id: 'other',
-                              name: 'Other',
-                              icon: '📄',
-                              color: Colors.grey,
-                            ),
-                    );
-                    return ReceiptCard(receipt: receipt, category: category);
-                  },
-                ),
-                      ),
-                    ],
-                  ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildReceiptsList(ReceiptProvider receiptProvider) {
-    return Column(
-      children: receiptProvider.recentReceipts.map((receipt) {
-        return Container(
-          key: ValueKey('receipt_${receipt.id}'),
-          margin: const EdgeInsets.only(bottom: AppTheme.spacingM),
-          child: _buildSimpleReceiptCard(receipt),
-        );
-      }).toList(),
-    );
-  }
-
-  Widget _buildSimpleReceiptCard(receipt) {
-    return Builder(
-      builder: (context) {
-        final categoryProvider = Provider.of<CategoryProvider>(context, listen: false);
-        final categories = categoryProvider.categories;
-        final category = categories.firstWhere(
-          (cat) => cat.id == receipt.category,
-          orElse: () => categories.isNotEmpty
-              ? categories.first
-              : Category(
-                  id: 'other',
-                  name: 'Other',
-                  icon: '📄',
-                  color: Colors.grey,
-                ),
-        );
-
-        return Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: () => context.go('/receipt/${receipt.id}'),
-            borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-            child: Container(
-              padding: const EdgeInsets.all(AppTheme.spacingM),
-              decoration: BoxDecoration(
-                color: Theme.of(context).brightness == Brightness.dark 
-                    ? const Color(0xFF1F2937) 
-                    : AppTheme.cardColor,
-                borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                boxShadow: AppTheme.cardShadow,
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 56,
-                    height: 56,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          category.color,
-                          category.color.withOpacity(0.7),
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                    ),
-                    child: Center(
-                      child: Text(
-                        category.icon,
-                        style: const TextStyle(fontSize: 24),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: AppTheme.spacingM),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+        child: FadeTransition(
+          opacity: _fadeAnimation,
+          child: CustomScrollView(
+            slivers: [
+              // App Bar moderne
+              SliverAppBar(
+                expandedHeight: 120,
+                floating: false,
+                pinned: true,
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+                flexibleSpace: FlexibleSpaceBar(
+                  title: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Row(
                       children: [
-                        Text(
-                          receipt.company,
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w600,
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            gradient: AppTheme.primaryGradient,
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: AppTheme.spacingXS),
-                        Text(
-                          '${receipt.date.day}/${receipt.date.month}/${receipt.date.year}',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppTheme.textSecondary,
+                          child: const Text(
+                            '💰',
+                            style: TextStyle(fontSize: 20),
                           ),
                         ),
-                        const SizedBox(height: AppTheme.spacingXS),
-                        Builder(
-                          builder: (context) {
-                            final categoryProvider = Provider.of<CategoryProvider>(context, listen: false);
-                            final categories = categoryProvider.categories;
-                            final category = categories.firstWhere(
-                              (cat) => cat.id == receipt.category,
-                              orElse: () => categories.isNotEmpty
-                                  ? categories.first
-                                  : Category(
-                                      id: 'other',
-                                      name: 'Other',
-                                      icon: '📄',
-                                      color: Colors.grey,
-                                    ),
-                            );
-                            return Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: AppTheme.spacingS,
-                                vertical: AppTheme.spacingXS,
-                              ),
-                              decoration: BoxDecoration(
-                                color: category.color.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                                border: Border.all(
-                                  color: category.color.withOpacity(0.3),
-                                  width: 1,
-                                ),
-                              ),
-                              child: Text(
-                                category.name,
-                                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                  color: category.color,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            );
-                          },
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            languageProvider.translate('receipt_scanner'),
+                            style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                              fontWeight: FontWeight.w900,
+                              color: AppTheme.textPrimary,
+                            ),
+                          ),
                         ),
                       ],
                     ),
                   ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        CurrencyFormatter.format(receipt.totalAmount),
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: AppTheme.primaryColor,
-                        ),
-                      ),
-                      const SizedBox(height: AppTheme.spacingXS),
-                      Container(
-                        padding: const EdgeInsets.all(AppTheme.spacingXS),
-                        decoration: BoxDecoration(
-                          color: AppTheme.primaryColor.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                        ),
-                        child: Icon(
-                          Icons.arrow_forward_ios,
-                          size: 16,
-                          color: AppTheme.primaryColor,
-                        ),
-                      ),
-                    ],
-                    ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildReceiptCard(BuildContext context, Receipt receipt) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () {
-          context.go('/receipt/${receipt.id}');
-        },
-        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-        child: Container(
-          key: ValueKey('receipt_${receipt.id}'),
-          margin: const EdgeInsets.only(bottom: 16),
-          padding: const EdgeInsets.all(AppTheme.spacingM),
-          decoration: BoxDecoration(
-            color: Theme.of(context).brightness == Brightness.dark 
-                ? const Color(0xFF1F2937) 
-                : AppTheme.cardColor,
-            borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.08),
-                blurRadius: 20,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Builder(
-                builder: (context) {
-                  final categoryProvider = Provider.of<CategoryProvider>(context, listen: false);
-                  final categories = categoryProvider.categories;
-                  final category = categories.firstWhere(
-                    (cat) => cat.id == receipt.category,
-                    orElse: () => categories.isNotEmpty
-                        ? categories.first
-                        : Category(
-                            id: 'other',
-                            name: 'Other',
-                            icon: '📄',
-                            color: Colors.grey,
-                          ),
-                  );
-                  return Container(
-                    width: 56,
-                    height: 56,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          category.color,
-                          category.color.withOpacity(0.7),
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                    ),
-                    child: Center(
-                      child: Text(
-                        category.icon,
-                        style: const TextStyle(fontSize: 24),
-                      ),
-                    ),
-                  );
-                },
-              ),
-              const SizedBox(width: AppTheme.spacingM),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      receipt.company,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: AppTheme.spacingXS),
-                    Text(
-                      '${receipt.date.day}/${receipt.date.month}/${receipt.date.year}',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppTheme.textSecondary,
-                      ),
-                    ),
-                    const SizedBox(height: AppTheme.spacingXS),
-                    Builder(
-                      builder: (context) {
-                        final categoryProvider = Provider.of<CategoryProvider>(context, listen: false);
-                        final categories = categoryProvider.categories;
-                        final category = categories.firstWhere(
-                          (cat) => cat.id == receipt.category,
-                          orElse: () => categories.isNotEmpty
-                              ? categories.first
-                              : Category(
-                                  id: 'other',
-                                  name: 'Other',
-                                  icon: '📄',
-                                  color: Colors.grey,
-                                ),
-                        );
-                        return Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: AppTheme.spacingS,
-                            vertical: AppTheme.spacingXS,
-                          ),
-                          decoration: BoxDecoration(
-                            color: category.color.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                            border: Border.all(
-                              color: category.color.withOpacity(0.3),
-                              width: 1,
-                            ),
-                          ),
-                          child: Text(
-                            category.name,
-                            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              color: category.color,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ],
+                  titlePadding: const EdgeInsets.only(
+                    left: 0,
+                    bottom: 16,
+                  ),
                 ),
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    CurrencyFormatter.format(receipt.totalAmount),
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: AppTheme.primaryColor,
-                    ),
+              
+              // Contenu principal
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.all(AppTheme.spacingL),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Cartes de statistiques avec gradients
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildGradientStatCard(
+                              context,
+                              title: languageProvider.translate('budget'),
+                              value: CurrencyFormatter.format(totalBudget),
+                              icon: '💰',
+                              gradient: AppTheme.primaryGradient,
+                              subtitle: languageProvider.translate('this_month'),
+                              onTap: () => context.go('/budget'),
+                            ),
+                          ),
+                          const SizedBox(width: AppTheme.spacingM),
+                          Expanded(
+                            child: _buildGradientStatCard(
+                              context,
+                              title: languageProvider.translate('spent'),
+                              value: CurrencyFormatter.format(monthlySpending),
+                              icon: '📊',
+                              gradient: AppTheme.secondaryGradient,
+                              subtitle: totalBudget > 0 ? '${((monthlySpending / totalBudget) * 100).toStringAsFixed(0)}%' : null,
+                            ),
+                          ),
+                        ],
+                      ),
+                      
+                      const SizedBox(height: AppTheme.spacingXL),
+                      
+                      // Actions rapides
+                      ModernCard(
+                        gradient: AppTheme.accentGradient,
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Actions rapides',
+                                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'Scanner ou ajouter un reçu',
+                                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                      color: Colors.white.withOpacity(0.9),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Row(
+                              children: [
+                                _buildQuickActionButton(
+                                  icon: Icons.camera_alt,
+                                  onTap: () => context.go('/scan'),
+                                ),
+                                const SizedBox(width: 12),
+                                _buildQuickActionButton(
+                                  icon: Icons.add,
+                                  onTap: () => context.go('/manual-entry'),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      
+                      const SizedBox(height: AppTheme.spacingXL),
+                      
+                      // Barre de recherche moderne
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+                          boxShadow: AppTheme.cardShadow,
+                        ),
+                        child: TextField(
+                          controller: _searchController,
+                          decoration: InputDecoration(
+                            hintText: 'Rechercher des reçus...',
+                            prefixIcon: Container(
+                              margin: const EdgeInsets.all(12),
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                gradient: AppTheme.primaryGradient,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Icon(
+                                Icons.search,
+                                color: Colors.white,
+                                size: 20,
+                              ),
+                            ),
+                            suffixIcon: _searchQuery.isNotEmpty
+                                ? IconButton(
+                                    icon: const Icon(Icons.clear),
+                                    onPressed: () {
+                                      setState(() {
+                                        _searchController.clear();
+                                        _searchQuery = '';
+                                      });
+                                    },
+                                  )
+                                : IconButton(
+                                    icon: Icon(
+                                      Icons.tune,
+                                      color: receiptProvider.hasActiveFilters ? AppTheme.primaryColor : AppTheme.textTertiary,
+                                    ),
+                                    onPressed: () {
+                                      showModalBottomSheet(
+                                        context: context,
+                                        isScrollControlled: true,
+                                        backgroundColor: Colors.transparent,
+                                        builder: (context) => Padding(
+                                          padding: EdgeInsets.only(
+                                            bottom: MediaQuery.of(context).viewInsets.bottom,
+                                          ),
+                                          child: ReceiptFilterSheet(
+                                            initialFilters: receiptProvider.currentFilters,
+                                            onFilterApplied: (filters) {
+                                              if (filters.isEmpty) {
+                                                receiptProvider.clearFilters();
+                                              } else {
+                                                receiptProvider.setFilters(filters);
+                                              }
+                                            },
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                            border: InputBorder.none,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: AppTheme.spacingM,
+                              vertical: AppTheme.spacingM,
+                            ),
+                          ),
+                          onChanged: (value) {
+                            setState(() {
+                              _searchQuery = value;
+                            });
+                          },
+                        ),
+                      ),
+                      
+                      const SizedBox(height: AppTheme.spacingXL),
+                      
+                      // En-tête des reçus récents
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            languageProvider.translate('recent_receipts'),
+                            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          if (filteredReceipts.isNotEmpty)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                gradient: AppTheme.primaryGradient,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                '${filteredReceipts.length}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                      
+                      const SizedBox(height: AppTheme.spacingM),
+                      
+                      // Liste des reçus ou état vide
+                      if (filteredReceipts.isEmpty)
+                        _buildEmptyState(context, languageProvider)
+                      else
+                        ...filteredReceipts.map((receipt) {
+                          final category = categories.firstWhere(
+                            (cat) => cat.id == receipt.category,
+                            orElse: () => categories.isNotEmpty
+                                ? categories.first
+                                : Category(
+                                    id: 'other',
+                                    name: 'Other',
+                                    icon: '📄',
+                                    color: AppTheme.categoryColors[6],
+                                  ),
+                          );
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: AppTheme.spacingM),
+                            child: ReceiptCard(receipt: receipt, category: category),
+                          );
+                        }),
+                      
+                      const SizedBox(height: AppTheme.spacingXXL),
+                    ],
                   ),
-                  const SizedBox(height: AppTheme.spacingXS),
-                  Container(
-                    padding: const EdgeInsets.all(AppTheme.spacingXS),
-                    decoration: BoxDecoration(
-                      color: AppTheme.primaryColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                    ),
-                    child: Icon(
-                      Icons.arrow_forward_ios,
-                      size: 16,
-                      color: AppTheme.primaryColor,
-                    ),
-                  ),
-                ],
+                ),
               ),
             ],
           ),
@@ -511,64 +352,84 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildStatCard(
+  Widget _buildGradientStatCard(
     BuildContext context, {
     required String title,
     required String value,
     required String icon,
-    required Color color,
+    required Gradient gradient,
     String? subtitle,
     VoidCallback? onTap,
   }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-      padding: const EdgeInsets.all(AppTheme.spacingM),
-      decoration: BoxDecoration(
-          color: Theme.of(context).brightness == Brightness.dark
-              ? const Color(0xFF1F2937)
-              : Colors.white,
+        padding: const EdgeInsets.all(AppTheme.spacingL),
+        decoration: BoxDecoration(
+          gradient: gradient,
           borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              blurRadius: 20,
-              offset: const Offset(0, 4),
+          boxShadow: AppTheme.elevatedShadow,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    icon,
+                    style: const TextStyle(fontSize: 20),
+                  ),
+                ),
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    title,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-                Text(
-                  icon,
-                  style: const TextStyle(fontSize: 24),
+            const SizedBox(height: AppTheme.spacingM),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                value,
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.w900,
+                  color: Colors.white,
                 ),
-                const SizedBox(width: AppTheme.spacingS),
-                Text(
-                  title,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: AppTheme.textSecondary,
-                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-            ],
-          ),
-            const SizedBox(height: AppTheme.spacingS),
-          Text(
-            value,
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-              color: color,
             ),
-          ),
-          if (subtitle != null) ...[
-            const SizedBox(height: AppTheme.spacingXS),
-            Text(
-              subtitle,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppTheme.textTertiary,
+            if (subtitle != null) ...[
+              const SizedBox(height: AppTheme.spacingXS),
+              Text(
+                subtitle,
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.9),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ],
@@ -578,67 +439,33 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildQuickAction(
-    BuildContext context, {
-    required String title,
-    required String icon,
-    required Color color,
+  Widget _buildQuickActionButton({
+    required IconData icon,
     required VoidCallback onTap,
   }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(AppTheme.spacingM),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [color, color.withOpacity(0.8)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
-          boxShadow: [
-            BoxShadow(
-              color: color.withOpacity(0.3),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          color: Colors.white.withOpacity(0.2),
+          borderRadius: BorderRadius.circular(12),
         ),
-        child: Row(
-          children: [
-            Text(
-              icon,
-              style: const TextStyle(fontSize: 24),
-            ),
-            const SizedBox(width: AppTheme.spacingS),
-            Text(
-              title,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
+        child: Icon(
+          icon,
+          color: Colors.white,
+          size: 20,
         ),
       ),
     );
   }
 
   Widget _buildEmptyState(BuildContext context, LanguageProvider languageProvider) {
-    return Container(
-      padding: const EdgeInsets.all(AppTheme.spacingL),
-      decoration: BoxDecoration(
-        color: Theme.of(context).brightness == Brightness.dark 
-            ? const Color(0xFF1F2937) 
-            : AppTheme.cardColor,
-        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-        boxShadow: AppTheme.cardShadow,
-      ),
+    return ModernCard(
       child: Column(
         children: [
           Container(
-            padding: const EdgeInsets.all(AppTheme.spacingL),
+            padding: const EdgeInsets.all(AppTheme.spacingXL),
             decoration: BoxDecoration(
               gradient: AppTheme.primaryGradient,
               shape: BoxShape.circle,
@@ -652,7 +479,7 @@ class _HomeScreenState extends State<HomeScreen> {
           Text(
             languageProvider.translate('no_receipts'),
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w700,
             ),
           ),
           const SizedBox(height: AppTheme.spacingS),
@@ -667,10 +494,20 @@ class _HomeScreenState extends State<HomeScreen> {
           Row(
             children: [
               Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () => context.go('/scan'),
-                  icon: const Text('📷'),
-                  label: const Text('Scanner'),
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: AppTheme.primaryGradient,
+                    borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+                  ),
+                  child: ElevatedButton.icon(
+                    onPressed: () => context.go('/scan'),
+                    icon: const Text('📷'),
+                    label: const Text('Scanner'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      shadowColor: Colors.transparent,
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(width: AppTheme.spacingM),
@@ -679,6 +516,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   onPressed: () => context.go('/manual-entry'),
                   icon: const Text('➕'),
                   label: const Text('Ajouter'),
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: AppTheme.primaryColor),
+                  ),
                 ),
               ),
             ],

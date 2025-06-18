@@ -9,6 +9,7 @@ class ModernCard extends StatelessWidget {
   final bool elevated;
   final Color? backgroundColor;
   final List<BoxShadow>? customShadow;
+  final Gradient? gradient;
 
   const ModernCard({
     super.key,
@@ -19,6 +20,7 @@ class ModernCard extends StatelessWidget {
     this.elevated = false,
     this.backgroundColor,
     this.customShadow,
+    this.gradient,
   });
 
   @override
@@ -31,8 +33,9 @@ class ModernCard extends StatelessWidget {
         vertical: AppTheme.spacingS,
       ),
       decoration: BoxDecoration(
-        color: backgroundColor ?? (isDark ? const Color(0xFF1F2937) : AppTheme.cardColor),
-        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+        color: gradient == null ? (backgroundColor ?? (isDark ? const Color(0xFF1A202C) : AppTheme.cardColor)) : null,
+        gradient: gradient,
+        borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
         boxShadow: customShadow ?? (elevated ? AppTheme.elevatedShadow : AppTheme.cardShadow),
         border: isDark ? Border.all(
           color: Colors.white.withOpacity(0.1),
@@ -40,7 +43,7 @@ class ModernCard extends StatelessWidget {
         ) : null,
       ),
       child: Padding(
-        padding: padding ?? const EdgeInsets.all(AppTheme.spacingM),
+        padding: padding ?? const EdgeInsets.all(AppTheme.spacingL),
         child: child,
       ),
     );
@@ -50,7 +53,7 @@ class ModernCard extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+          borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
           child: cardWidget,
         ),
       );
