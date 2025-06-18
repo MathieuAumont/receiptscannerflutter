@@ -12,6 +12,9 @@ import 'package:receipt_scanner_flutter/services/ai_service.dart';
 import 'package:receipt_scanner_flutter/widgets/modern_app_bar.dart';
 import 'package:receipt_scanner_flutter/models/receipt.dart';
 import 'package:go_router/go_router.dart';
+import 'package:receipt_scanner_flutter/screens/manual_entry_screen.dart';
+import 'package:receipt_scanner_flutter/providers/category_provider.dart';
+import 'package:receipt_scanner_flutter/models/category.dart';
 
 class ScanScreen extends StatefulWidget {
   const ScanScreen({super.key});
@@ -146,7 +149,30 @@ class _ScanScreenState extends State<ScanScreen> {
       // Analyze receipt with AI
       final receiptData = await AIService.analyzeReceipt(base64Image);
 
-      // Create receipt from AI analysis
+      // Gestion des taxes : si 'taxes' global mais pas tps/tvq, répartir
+      double tps = (receiptData['tps'] ?? 0.0).toDouble();
+      double tvq = (receiptData['tvq'] ?? 0.0).toDouble();
+      if ((tps == 0.0 && tvq == 0.0) && receiptData['taxes'] != null) {
+        final totalTaxes = (receiptData['taxes'] ?? 0.0).toDouble();
+        // TPS = 5%, TVQ = 9.975% du sous-total (Québec)
+        // Répartition proportionnelle
+        final tpsRate = 0.05;
+        final tvqRate = 0.09975;
+        final totalRate = tpsRate + tvqRate;
+        tps = totalTaxes * (tpsRate / totalRate);
+        tvq = totalTaxes * (tvqRate / totalRate);
+      }
+
+      // Récupérer toutes les catégories (custom + défaut)
+      final categoryProvider = Provider.of<CategoryProvider>(context, listen: false);
+      final allCategories = categoryProvider.categories;
+      String categoryId = 'other';
+      if (receiptData['category'] != null) {
+        final found = CategoryService.findCategoryByName(allCategories, receiptData['category']);
+        if (found != null) categoryId = found.id;
+      }
+
+      // Création du Receipt (avec id unique)
       final receipt = Receipt(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         company: receiptData['merchant'] ?? 'Unknown',
@@ -159,11 +185,11 @@ class _ScanScreenState extends State<ScanScreen> {
         )).toList() ?? [],
         subtotal: (receiptData['subtotal'] ?? 0.0).toDouble(),
         taxes: Taxes(
-          tps: (receiptData['tps'] ?? 0.0).toDouble(),
-          tvq: (receiptData['tvq'] ?? 0.0).toDouble(),
+          tps: tps,
+          tvq: tvq,
         ),
         totalAmount: (receiptData['total'] ?? 0.0).toDouble(),
-        category: receiptData['category'] ?? 'other',
+        category: categoryId,
         metadata: ReceiptMetadata(
           processedAt: DateTime.now(),
           ocrEngine: 'gpt-4o',
@@ -172,18 +198,16 @@ class _ScanScreenState extends State<ScanScreen> {
         ),
       );
 
-      // Save receipt
-      if (!mounted) return;
+      // Ajout immédiat dans le provider
       final receiptProvider = Provider.of<ReceiptProvider>(context, listen: false);
       await receiptProvider.addReceipt(receipt);
 
-      if (mounted) {
-        final languageProvider = Provider.of<LanguageProvider>(context, listen: false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(languageProvider.translate('receipt_processed_success'))),
-        );
-        context.go('/home');
-      }
+      // Ouvre la page de modification
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => ManualEntryScreen(receipt: receipt),
+        ),
+      );
     } catch (e) {
       if (mounted) {
         final languageProvider = Provider.of<LanguageProvider>(context, listen: false);

@@ -433,22 +433,22 @@ class _ReportsScreenState extends State<ReportsScreen>
     return ModernCard(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(AppTheme.spacingM),
+      padding: const EdgeInsets.all(AppTheme.spacingM),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
               width: 48,
               height: 48,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
                     color,
                     color.withOpacity(0.7),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
                 borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
                 boxShadow: [
                   BoxShadow(
@@ -464,9 +464,9 @@ class _ReportsScreenState extends State<ReportsScreen>
                   style: const TextStyle(fontSize: 24),
                 ),
               ),
-            ),
-            const SizedBox(height: AppTheme.spacingM),
-            Text(
+          ),
+          const SizedBox(height: AppTheme.spacingM),
+          Text(
               title,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: AppTheme.textSecondary,
@@ -474,11 +474,17 @@ class _ReportsScreenState extends State<ReportsScreen>
               ),
             ),
             const SizedBox(height: AppTheme.spacingXS),
-            Text(
-              value,
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: AppTheme.textPrimary,
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+            value,
+            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.textPrimary,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
             if (onTap != null) ...[

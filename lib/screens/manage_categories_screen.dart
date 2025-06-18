@@ -12,8 +12,8 @@ class ManageCategoriesScreen extends StatefulWidget {
 
 class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
   final _nameController = TextEditingController();
-  final _iconController = TextEditingController();
   Color _selectedColor = Colors.blue;
+  String? _selectedEmoji;
 
   @override
   void initState() {
@@ -24,7 +24,6 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
   @override
   void dispose() {
     _nameController.dispose();
-    _iconController.dispose();
     super.dispose();
   }
 
@@ -43,9 +42,32 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
               controller: _nameController,
               decoration: const InputDecoration(labelText: 'Nom de la catégorie'),
             ),
-            TextField(
-              controller: _iconController,
-              decoration: const InputDecoration(labelText: 'Emoji/Icone (ex: 🍔)'),
+            Row(
+              children: [
+                const Text('Icon :'),
+                const SizedBox(width: 8),
+                OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(36, 36),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  ),
+                  onPressed: () async {
+                    final emoji = await showDialog<String>(
+                      context: context,
+                      builder: (context) => EmojiPickerDialog(selected: _selectedEmoji),
+                    );
+                    if (emoji != null) {
+                      setState(() {
+                        _selectedEmoji = emoji;
+                      });
+                    }
+                  },
+                  child: Text(
+                    _selectedEmoji ?? '+',
+                    style: const TextStyle(fontSize: 20),
+                  ),
+                ),
+              ],
             ),
             Row(
               children: [
@@ -88,19 +110,19 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
             const SizedBox(height: 12),
             ElevatedButton(
               onPressed: () async {
-                if (_nameController.text.trim().isEmpty || _iconController.text.trim().isEmpty) return;
+                if (_nameController.text.trim().isEmpty || _selectedEmoji == null) return;
                 final newCategory = Category(
                   id: DateTime.now().millisecondsSinceEpoch.toString(),
                   name: _nameController.text.trim(),
-                  icon: _iconController.text.trim(),
+                  icon: _selectedEmoji!,
                   color: _selectedColor,
                   isCustom: true,
                 );
                 await categoryProvider.addCategory(newCategory);
                 _nameController.clear();
-                _iconController.clear();
                 setState(() {
                   _selectedColor = Colors.blue;
+                  _selectedEmoji = null;
                 });
               },
               child: const Text('Ajouter la catégorie'),
@@ -127,6 +149,45 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class EmojiPickerDialog extends StatelessWidget {
+  final String? selected;
+  EmojiPickerDialog({this.selected});
+
+  static const emojis = [
+    '🛒', '🍽️', '🏠', '🚗', '🏥', '🎉', '👔', '🧾', '🛍️', '💡',
+    '📚', '🏦', '🏖️', '🐾', '🧸', '🎁', '🛠️', '📱', '💻', '🏫'
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Choisir un emoji'),
+      content: SizedBox(
+        width: 300,
+        child: Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: emojis.map((e) => GestureDetector(
+            onTap: () => Navigator.of(context).pop(e),
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: selected == e ? Colors.blue.withOpacity(0.2) : null,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: selected == e ? Colors.blue : Colors.grey.shade300,
+                  width: selected == e ? 2 : 1,
+                ),
+              ),
+              child: Text(e, style: const TextStyle(fontSize: 28)),
+            ),
+          )).toList(),
         ),
       ),
     );

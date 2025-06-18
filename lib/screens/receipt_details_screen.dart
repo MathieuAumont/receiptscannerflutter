@@ -10,6 +10,7 @@ import 'package:receipt_scanner_flutter/widgets/modern_app_bar.dart';
 import 'package:receipt_scanner_flutter/widgets/modern_card.dart';
 import 'package:receipt_scanner_flutter/utils/currency_formatter.dart';
 import 'package:receipt_scanner_flutter/utils/date_formatter.dart';
+import 'package:receipt_scanner_flutter/providers/category_provider.dart';
 
 class ReceiptDetailsScreen extends StatelessWidget {
   final String receiptId;
@@ -24,6 +25,8 @@ class ReceiptDetailsScreen extends StatelessWidget {
     final languageProvider = Provider.of<LanguageProvider>(context);
     final receiptProvider = Provider.of<ReceiptProvider>(context);
     final receipt = receiptProvider.getReceiptById(receiptId);
+    final categoryProvider = Provider.of<CategoryProvider>(context);
+    final categories = categoryProvider.categories;
 
     if (receipt == null) {
       return Scaffold(
@@ -40,7 +43,6 @@ class ReceiptDetailsScreen extends StatelessWidget {
       );
     }
 
-    final categories = CategoryService.getDefaultCategories();
     final category = categories.firstWhere(
       (cat) => cat.id == receipt.category,
       orElse: () => Category(
@@ -50,6 +52,7 @@ class ReceiptDetailsScreen extends StatelessWidget {
         color: Colors.grey,
       ),
     );
+    final isDefault = !category.isCustom;
 
     return Scaffold(
       appBar: PreferredSize(
@@ -203,7 +206,7 @@ class ReceiptDetailsScreen extends StatelessWidget {
                       ),
                     ),
                     child: Text(
-                      category.name,
+                      isDefault ? languageProvider.translate('category_${category.id}') : category.name,
                       style: TextStyle(
                         color: category.color,
                         fontWeight: FontWeight.w600,
@@ -228,9 +231,11 @@ class ReceiptDetailsScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: AppTheme.spacingM),
-                  ...receipt.items.map((item) {
+                  ...receipt.items.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final item = entry.value;
                     return Padding(
-                      key: ValueKey(item.id),
+                      key: ValueKey('${item.id}_$index'),
                       padding: const EdgeInsets.only(bottom: AppTheme.spacingM),
                       child: Row(
                         children: [
@@ -352,11 +357,15 @@ class ReceiptDetailsScreen extends StatelessWidget {
               fontWeight: isTotal ? FontWeight.w700 : FontWeight.normal,
             ),
           ),
-          Text(
-            value,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              fontWeight: isTotal ? FontWeight.w700 : FontWeight.normal,
-              color: isTotal ? AppTheme.primaryColor : null,
+          Flexible(
+            child: Text(
+              value,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                fontWeight: isTotal ? FontWeight.w700 : FontWeight.normal,
+                color: isTotal ? AppTheme.primaryColor : null,
+              ),
             ),
           ),
         ],

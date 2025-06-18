@@ -64,6 +64,36 @@ class Receipt {
           : null,
     );
   }
+
+  Receipt copyWith({
+    String? id,
+    String? company,
+    DateTime? date,
+    List<ReceiptItem>? items,
+    double? subtotal,
+    Taxes? taxes,
+    double? totalAmount,
+    String? category,
+    String? currency,
+    String? notes,
+    String? originalImage,
+    ReceiptMetadata? metadata,
+  }) {
+    return Receipt(
+      id: id ?? this.id,
+      company: company ?? this.company,
+      date: date ?? this.date,
+      items: items ?? this.items,
+      subtotal: subtotal ?? this.subtotal,
+      taxes: taxes ?? this.taxes,
+      totalAmount: totalAmount ?? this.totalAmount,
+      category: category ?? this.category,
+      currency: currency ?? this.currency,
+      notes: notes ?? this.notes,
+      originalImage: originalImage ?? this.originalImage,
+      metadata: metadata ?? this.metadata,
+    );
+  }
 }
 
 class ReceiptItem {

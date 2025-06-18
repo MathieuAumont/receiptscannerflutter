@@ -10,6 +10,8 @@ import 'package:receipt_scanner_flutter/models/category.dart';
 import 'package:receipt_scanner_flutter/models/receipt.dart';
 import 'package:receipt_scanner_flutter/screens/receipt_search_delegate.dart';
 import 'package:receipt_scanner_flutter/screens/receipt_filter_sheet.dart';
+import 'package:receipt_scanner_flutter/providers/category_provider.dart';
+import 'package:receipt_scanner_flutter/widgets/receipt_card.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -36,6 +38,8 @@ class _HomeScreenState extends State<HomeScreen> {
     final totalBudget = budgetProvider.getTotalBudgetForMonth(currentMonthKey);
     final monthlySpending = receiptProvider.getMonthlySpending();
     final languageProvider = Provider.of<LanguageProvider>(context);
+    final categoryProvider = Provider.of<CategoryProvider>(context);
+    final categories = categoryProvider.categories;
 
     // Filtrer les reçus en fonction de la recherche
     final filteredReceipts = _searchQuery.isEmpty
@@ -53,38 +57,38 @@ class _HomeScreenState extends State<HomeScreen> {
       resizeToAvoidBottomInset: true,
       appBar: AppBar(title: Text(languageProvider.translate('receipt_scanner'))),
       body: SafeArea(
-        child: Padding(
+            child: Padding(
           padding: const EdgeInsets.all(24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 24),
-              Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
+              const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      Expanded(
                     child: _buildStatCard(
-                      context,
+                          context,
                       title: languageProvider.translate('budget'),
-                      value: CurrencyFormatter.format(totalBudget),
-                      icon: '💰',
-                      color: const Color(0xFF10B981),
+                          value: CurrencyFormatter.format(totalBudget),
+                          icon: '💰',
+                          color: const Color(0xFF10B981),
                       subtitle: languageProvider.translate('this_month'),
                       onTap: () => context.go('/budget'),
-                    ),
-                  ),
+                        ),
+                      ),
                   const SizedBox(width: 16),
-                  Expanded(
+                      Expanded(
                     child: _buildStatCard(
-                      context,
+                          context,
                       title: languageProvider.translate('spent'),
                       value: monthlySpending.toStringAsFixed(2),
-                      icon: '📊',
-                      color: const Color(0xFFF59E0B),
+                          icon: '📊',
+                          color: const Color(0xFFF59E0B),
                       subtitle: totalBudget > 0 ? '${((monthlySpending / totalBudget) * 100).toStringAsFixed(0)}%' : null,
-                    ),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
               const SizedBox(height: 32),
               // Barre de recherche
               TextField(
@@ -118,15 +122,15 @@ class _HomeScreenState extends State<HomeScreen> {
                 },
               ),
               const SizedBox(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    languageProvider.translate('recent_receipts'),
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        languageProvider.translate('recent_receipts'),
+                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                   IconButton(
                     icon: Icon(
                       Icons.filter_list,
@@ -164,12 +168,23 @@ class _HomeScreenState extends State<HomeScreen> {
                   itemCount: filteredReceipts.length,
                   itemBuilder: (context, index) {
                     final receipt = filteredReceipts[index];
-                    return _buildReceiptCard(context, receipt);
+                    final category = categories.firstWhere(
+                      (cat) => cat.id == receipt.category,
+                      orElse: () => categories.isNotEmpty
+                          ? categories.first
+                          : Category(
+                              id: 'other',
+                              name: 'Other',
+                              icon: '📄',
+                              color: Colors.grey,
+                            ),
+                    );
+                    return ReceiptCard(receipt: receipt, category: category);
                   },
                 ),
-              ),
-            ],
-          ),
+                      ),
+                    ],
+                  ),
         ),
       ),
     );
@@ -190,10 +205,18 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildSimpleReceiptCard(receipt) {
     return Builder(
       builder: (context) {
-        final categories = CategoryService.getDefaultCategories();
+        final categoryProvider = Provider.of<CategoryProvider>(context, listen: false);
+        final categories = categoryProvider.categories;
         final category = categories.firstWhere(
           (cat) => cat.id == receipt.category,
-          orElse: () => categories.first,
+          orElse: () => categories.isNotEmpty
+              ? categories.first
+              : Category(
+                  id: 'other',
+                  name: 'Other',
+                  icon: '📄',
+                  color: Colors.grey,
+                ),
         );
 
         return Material(
@@ -254,26 +277,43 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                         const SizedBox(height: AppTheme.spacingXS),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: AppTheme.spacingS,
-                            vertical: AppTheme.spacingXS,
-                          ),
-                          decoration: BoxDecoration(
-                            color: category.color.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                            border: Border.all(
-                              color: category.color.withOpacity(0.3),
-                              width: 1,
-                            ),
-                          ),
-                          child: Text(
-                            category.name,
-                            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              color: category.color,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
+                        Builder(
+                          builder: (context) {
+                            final categoryProvider = Provider.of<CategoryProvider>(context, listen: false);
+                            final categories = categoryProvider.categories;
+                            final category = categories.firstWhere(
+                              (cat) => cat.id == receipt.category,
+                              orElse: () => categories.isNotEmpty
+                                  ? categories.first
+                                  : Category(
+                                      id: 'other',
+                                      name: 'Other',
+                                      icon: '📄',
+                                      color: Colors.grey,
+                                    ),
+                            );
+                            return Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: AppTheme.spacingS,
+                                vertical: AppTheme.spacingXS,
+                              ),
+                              decoration: BoxDecoration(
+                                color: category.color.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                                border: Border.all(
+                                  color: category.color.withOpacity(0.3),
+                                  width: 1,
+                                ),
+                              ),
+                              child: Text(
+                                category.name,
+                                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                  color: category.color,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            );
+                          },
                         ),
                       ],
                     ),
@@ -302,7 +342,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                     ],
-                  ),
+                    ),
                 ],
               ),
             ),
@@ -339,35 +379,43 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           child: Row(
             children: [
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      CategoryService.getDefaultCategories().firstWhere(
-                        (cat) => cat.id == receipt.category,
-                        orElse: () => CategoryService.getDefaultCategories().first,
-                      ).color,
-                      CategoryService.getDefaultCategories().firstWhere(
-                        (cat) => cat.id == receipt.category,
-                        orElse: () => CategoryService.getDefaultCategories().first,
-                      ).color.withOpacity(0.7),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                ),
-                child: Center(
-                  child: Text(
-                    CategoryService.getDefaultCategories().firstWhere(
-                      (cat) => cat.id == receipt.category,
-                      orElse: () => CategoryService.getDefaultCategories().first,
-                    ).icon,
-                    style: const TextStyle(fontSize: 24),
-                  ),
-                ),
+              Builder(
+                builder: (context) {
+                  final categoryProvider = Provider.of<CategoryProvider>(context, listen: false);
+                  final categories = categoryProvider.categories;
+                  final category = categories.firstWhere(
+                    (cat) => cat.id == receipt.category,
+                    orElse: () => categories.isNotEmpty
+                        ? categories.first
+                        : Category(
+                            id: 'other',
+                            name: 'Other',
+                            icon: '📄',
+                            color: Colors.grey,
+                          ),
+                  );
+                  return Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          category.color,
+                          category.color.withOpacity(0.7),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                    ),
+                    child: Center(
+                      child: Text(
+                        category.icon,
+                        style: const TextStyle(fontSize: 24),
+                      ),
+                    ),
+                  );
+                },
               ),
               const SizedBox(width: AppTheme.spacingM),
               Expanded(
@@ -390,38 +438,43 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                     const SizedBox(height: AppTheme.spacingXS),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppTheme.spacingS,
-                        vertical: AppTheme.spacingXS,
-                      ),
-                      decoration: BoxDecoration(
-                        color: CategoryService.getDefaultCategories().firstWhere(
+                    Builder(
+                      builder: (context) {
+                        final categoryProvider = Provider.of<CategoryProvider>(context, listen: false);
+                        final categories = categoryProvider.categories;
+                        final category = categories.firstWhere(
                           (cat) => cat.id == receipt.category,
-                          orElse: () => CategoryService.getDefaultCategories().first,
-                        ).color.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                        border: Border.all(
-                          color: CategoryService.getDefaultCategories().firstWhere(
-                            (cat) => cat.id == receipt.category,
-                            orElse: () => CategoryService.getDefaultCategories().first,
-                          ).color.withOpacity(0.3),
-                          width: 1,
-                        ),
-                      ),
-                      child: Text(
-                        CategoryService.getDefaultCategories().firstWhere(
-                          (cat) => cat.id == receipt.category,
-                          orElse: () => CategoryService.getDefaultCategories().first,
-                        ).name,
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: CategoryService.getDefaultCategories().firstWhere(
-                            (cat) => cat.id == receipt.category,
-                            orElse: () => CategoryService.getDefaultCategories().first,
-                          ).color,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                          orElse: () => categories.isNotEmpty
+                              ? categories.first
+                              : Category(
+                                  id: 'other',
+                                  name: 'Other',
+                                  icon: '📄',
+                                  color: Colors.grey,
+                                ),
+                        );
+                        return Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppTheme.spacingS,
+                            vertical: AppTheme.spacingXS,
+                          ),
+                          decoration: BoxDecoration(
+                            color: category.color.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                            border: Border.all(
+                              color: category.color.withOpacity(0.3),
+                              width: 1,
+                            ),
+                          ),
+                          child: Text(
+                            category.name,
+                            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                              color: category.color,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -470,8 +523,8 @@ class _HomeScreenState extends State<HomeScreen> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(AppTheme.spacingM),
-        decoration: BoxDecoration(
+      padding: const EdgeInsets.all(AppTheme.spacingM),
+      decoration: BoxDecoration(
           color: Theme.of(context).brightness == Brightness.dark
               ? const Color(0xFF1F2937)
               : Colors.white,
@@ -483,12 +536,12 @@ class _HomeScreenState extends State<HomeScreen> {
               offset: const Offset(0, 4),
             ),
           ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
                 Text(
                   icon,
                   style: const TextStyle(fontSize: 24),
@@ -498,23 +551,23 @@ class _HomeScreenState extends State<HomeScreen> {
                   title,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: AppTheme.textSecondary,
-                  ),
                 ),
-              ],
-            ),
+              ),
+            ],
+          ),
             const SizedBox(height: AppTheme.spacingS),
-            Text(
-              value,
+          Text(
+            value,
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.w700,
-                color: color,
-              ),
+              color: color,
             ),
-            if (subtitle != null) ...[
-              const SizedBox(height: AppTheme.spacingXS),
-              Text(
-                subtitle,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+          ),
+          if (subtitle != null) ...[
+            const SizedBox(height: AppTheme.spacingXS),
+            Text(
+              subtitle,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: AppTheme.textTertiary,
                 ),
               ),

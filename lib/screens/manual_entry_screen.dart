@@ -139,7 +139,7 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
   String _selectedCategory = CategoryService.getDefaultCategories().first.id;
   final List<ItemEntry> _items = [];
   
-  bool _pricesIncludeTax = true;
+  bool _pricesIncludeTax = false;
   bool _isLoading = false;
 
   @override
@@ -456,7 +456,7 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
                       spacing: AppTheme.spacingS,
                       children: categories.map((category) {
                         final isSelected = _selectedCategory == category.id;
-                        
+                        final isDefault = !category.isCustom;
                         return FilterChip(
                           selected: isSelected,
                           label: Row(
@@ -464,7 +464,7 @@ class _ManualEntryScreenState extends State<ManualEntryScreen> {
                             children: [
                               Text(category.icon),
                               const SizedBox(width: 4),
-                              Text(languageProvider.translate('category_${category.id}')),
+                              Text(isDefault ? languageProvider.translate('category_${category.id}') : category.name),
                             ],
                           ),
                           onSelected: (selected) {

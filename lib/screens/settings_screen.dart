@@ -10,6 +10,10 @@ import 'package:receipt_scanner_flutter/widgets/modern_card.dart';
 import 'package:receipt_scanner_flutter/services/storage_service.dart';
 import 'package:receipt_scanner_flutter/screens/help_support_screen.dart';
 import 'package:receipt_scanner_flutter/screens/manage_categories_screen.dart';
+import 'package:flutter_colorpicker/flutter_colorpicker.dart';
+import 'package:receipt_scanner_flutter/models/category.dart';
+import 'package:receipt_scanner_flutter/providers/category_provider.dart';
+
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -97,6 +101,27 @@ class SettingsScreen extends StatelessWidget {
                         onChanged: (value) => languageProvider.toggleLanguage(),
                       ),
                     ],
+                  ),
+                  const Divider(),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Container(
+                      padding: const EdgeInsets.all(AppTheme.spacingS),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                      ),
+                      child: Icon(Icons.category, color: AppTheme.primaryColor),
+                    ),
+                    title: Text(languageProvider.translate('manage_categories')),
+                    trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => ManageCategoriesScreen(),
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),
@@ -236,19 +261,6 @@ class SettingsScreen extends StatelessWidget {
             
             const SizedBox(height: AppTheme.spacingL),
             
-            ListTile(
-              leading: const Icon(Icons.category),
-              title: Text(languageProvider.translate('manage_categories')),
-              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => ManageCategoriesScreen(),
-                  ),
-                );
-              },
-            ),
-            
             const SizedBox(height: AppTheme.spacingXXL),
             
             // Footer
@@ -329,6 +341,127 @@ class SettingsScreen extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _CategoryManagerInline extends StatefulWidget {
+  @override
+  State<_CategoryManagerInline> createState() => _CategoryManagerInlineState();
+}
+
+class _CategoryManagerInlineState extends State<_CategoryManagerInline> {
+  final _nameController = TextEditingController();
+  final _iconController = TextEditingController();
+  Color _selectedColor = Colors.blue;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _iconController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final categoryProvider = Provider.of<CategoryProvider>(context);
+    final categories = categoryProvider.categories;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _nameController,
+                decoration: const InputDecoration(labelText: 'Nom de la catégorie'),
+              ),
+            ),
+            const SizedBox(width: 8),
+            SizedBox(
+              width: 60,
+              child: TextField(
+                controller: _iconController,
+                decoration: const InputDecoration(labelText: 'Emoji'),
+                maxLength: 2,
+              ),
+            ),
+            const SizedBox(width: 8),
+            GestureDetector(
+              onTap: () async {
+                final color = await showDialog<Color>(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('Choisir une couleur'),
+                    content: SingleChildScrollView(
+                      child: BlockPicker(
+                        pickerColor: _selectedColor,
+                        onColorChanged: (color) {
+                          Navigator.of(context).pop(color);
+                        },
+                      ),
+                    ),
+                  ),
+                );
+                if (color != null) {
+                  setState(() {
+                    _selectedColor = color;
+                  });
+                }
+              },
+              child: Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: _selectedColor,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.grey),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            ElevatedButton(
+              onPressed: () async {
+                if (_nameController.text.trim().isEmpty || _iconController.text.trim().isEmpty) return;
+                final newCategory = Category(
+                  id: DateTime.now().millisecondsSinceEpoch.toString(),
+                  name: _nameController.text.trim(),
+                  icon: _iconController.text.trim(),
+                  color: _selectedColor,
+                  isCustom: true,
+                );
+                await categoryProvider.addCategory(newCategory);
+                _nameController.clear();
+                _iconController.clear();
+                setState(() {
+                  _selectedColor = Colors.blue;
+                });
+              },
+              child: const Text('Ajouter'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: categories.map((cat) => Chip(
+            label: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(cat.icon),
+                const SizedBox(width: 4),
+                Text(cat.name),
+              ],
+            ),
+            backgroundColor: cat.color.withOpacity(0.15),
+            deleteIcon: cat.isCustom ? const Icon(Icons.close) : null,
+            onDeleted: cat.isCustom ? () async {
+              await categoryProvider.deleteCategory(cat.id);
+            } : null,
+          )).toList(),
+        ),
+      ],
     );
   }
 }

@@ -20,6 +20,7 @@ class CategoryProvider extends ChangeNotifier {
 
   Future<void> deleteCategory(String id) async {
     await _storageService.deleteCustomCategory(id);
+    await _storageService.replaceCategoryInReceipts(id, 'other');
     await loadCategories();
   }
 } 

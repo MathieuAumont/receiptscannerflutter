@@ -130,4 +130,15 @@ class StorageService {
     categories.removeWhere((c) => c.id == id);
     await saveCustomCategories(categories);
   }
+
+  Future<void> replaceCategoryInReceipts(String oldCategoryId, String newCategoryId) async {
+    final receipts = await getReceipts();
+    final updated = receipts.map((r) {
+      if (r.category == oldCategoryId) {
+        return r.copyWith(category: newCategoryId);
+      }
+      return r;
+    }).toList();
+    await _saveReceipts(updated);
+  }
 }

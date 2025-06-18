@@ -97,4 +97,11 @@ class CategoryService {
     final defaults = getDefaultCategories();
     return [...defaults, ...custom];
   }
+
+  static Category? findCategoryByName(List<Category> categories, String name) {
+    for (final cat in categories) {
+      if (cat.name.toLowerCase() == name.toLowerCase()) return cat;
+    }
+    return null;
+  }
 }
