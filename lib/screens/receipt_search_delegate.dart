@@ -3,6 +3,7 @@ import 'package:receipt_scanner_flutter/models/receipt.dart';
 import 'package:receipt_scanner_flutter/utils/currency_formatter.dart';
 import 'package:receipt_scanner_flutter/theme/app_theme.dart';
 import 'package:receipt_scanner_flutter/models/category.dart';
+import 'package:intl/intl.dart';
 
 class ReceiptSearchDelegate extends SearchDelegate<Receipt?> {
   final List<Receipt> receipts;
@@ -42,6 +43,32 @@ class ReceiptSearchDelegate extends SearchDelegate<Receipt?> {
     return _buildSearchResults(context);
   }
 
+  bool _matchesDate(DateTime date, String searchTerm) {
+    final dateStr = DateFormat('dd/MM/yyyy').format(date);
+    final monthStr = DateFormat('MMMM', 'fr_FR').format(date).toLowerCase();
+    final monthStrEn = DateFormat('MMMM', 'en_US').format(date).toLowerCase();
+    
+    return dateStr.contains(searchTerm) || 
+           monthStr.contains(searchTerm) ||
+           monthStrEn.contains(searchTerm);
+  }
+
+  bool _matchesAmount(double amount, String searchTerm) {
+    final amountStr = amount.toString();
+    final formattedAmount = CurrencyFormatter.format(amount);
+    
+    return amountStr.contains(searchTerm) ||
+           formattedAmount.toLowerCase().contains(searchTerm);
+  }
+
+  bool _matchesItems(List<ReceiptItem> items, String searchTerm) {
+    return items.any((item) => 
+      item.name.toLowerCase().contains(searchTerm) ||
+      _matchesAmount(item.price, searchTerm) ||
+      (item.quantity?.toString().contains(searchTerm) ?? false)
+    );
+  }
+
   Widget _buildSearchResults(BuildContext context) {
     if (query.isEmpty) {
       return const Center(
@@ -49,13 +76,17 @@ class ReceiptSearchDelegate extends SearchDelegate<Receipt?> {
       );
     }
 
+    final searchLower = query.toLowerCase();
     final results = receipts.where((receipt) {
-      final searchLower = query.toLowerCase();
       final category = CategoryService.getCategoryById(receipt.category);
+      
+      // Recherche sur tous les critères
       return receipt.company.toLowerCase().contains(searchLower) ||
           receipt.notes?.toLowerCase().contains(searchLower) == true ||
-          receipt.items.any((item) => item.name.toLowerCase().contains(searchLower)) ||
-          category.name.toLowerCase().contains(searchLower);
+          _matchesItems(receipt.items, searchLower) ||
+          category.name.toLowerCase().contains(searchLower) ||
+          _matchesDate(receipt.date, searchLower) ||
+          _matchesAmount(receipt.totalAmount, searchLower);
     }).toList();
 
     if (results.isEmpty) {
@@ -102,8 +133,16 @@ class ReceiptSearchDelegate extends SearchDelegate<Receipt?> {
               ),
             ),
             title: Text(receipt.company),
-            subtitle: Text(
-              '${receipt.date.day}/${receipt.date.month}/${receipt.date.year}',
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(DateFormat('dd/MM/yyyy').format(receipt.date)),
+                if (receipt.items.isNotEmpty)
+                  Text(
+                    '${receipt.items.length} items',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+              ],
             ),
             trailing: Text(
               CurrencyFormatter.format(receipt.totalAmount),
