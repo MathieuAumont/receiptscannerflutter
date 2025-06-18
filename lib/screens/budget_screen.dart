@@ -10,6 +10,7 @@ import 'package:receipt_scanner_flutter/widgets/modern_app_bar.dart';
 import 'package:receipt_scanner_flutter/widgets/modern_card.dart';
 import 'package:receipt_scanner_flutter/utils/currency_formatter.dart';
 import 'package:receipt_scanner_flutter/screens/monthly_receipts_screen.dart';
+import 'package:receipt_scanner_flutter/providers/category_provider.dart';
 
 class BudgetScreen extends StatefulWidget {
   const BudgetScreen({super.key});
@@ -60,11 +61,17 @@ class _BudgetScreenState extends State<BudgetScreen> with TickerProviderStateMix
     final languageProvider = Provider.of<LanguageProvider>(context);
     final budgetProvider = Provider.of<BudgetProvider>(context);
     final receiptProvider = Provider.of<ReceiptProvider>(context);
-    final categories = CategoryService.getDefaultCategories();
-
+    final categoryProvider = Provider.of<CategoryProvider>(context);
+    final categories = categoryProvider.categories;
+    
     final currentBudget = budgetProvider.getBudgetForMonth(_monthKey);
-    final totalBudget = budgetProvider.getTotalBudgetForMonth(_monthKey);
-    final monthlySpending = receiptProvider.getMonthlySpending(_selectedMonth);
+    final monthlySpending = receiptProvider.receipts
+        .where((receipt) => 
+            receipt.date.year == _selectedMonth.year &&
+            receipt.date.month == _selectedMonth.month)
+        .fold(0.0, (sum, receipt) => sum + receipt.totalAmount);
+    
+    final totalBudget = currentBudget.fold(0.0, (sum, item) => sum + item.amount);
 
     return Scaffold(
       appBar: PreferredSize(
@@ -297,9 +304,7 @@ class _BudgetScreenState extends State<BudgetScreen> with TickerProviderStateMix
                 const SizedBox(height: AppTheme.spacingL),
                 
                 // Liste des catégories
-                ...categories.asMap().entries.map((entry) {
-                  final index = entry.key;
-                  final category = entry.value;
+                ...categories.map((category) {
                   final budgetItem = currentBudget.firstWhere(
                     (item) => item.categoryId == category.id,
                     orElse: () => BudgetItem(categoryId: category.id, amount: 0),
@@ -353,7 +358,7 @@ class _BudgetScreenState extends State<BudgetScreen> with TickerProviderStateMix
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      languageProvider.translate('category_${category.id}'),
+                                      category.isCustom ? category.name : languageProvider.translate('category_${category.id}'),
                                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                         fontWeight: FontWeight.w700,
                                       ),
@@ -455,7 +460,7 @@ class _BudgetScreenState extends State<BudgetScreen> with TickerProviderStateMix
                       ),
                     ),
                   );
-                }),
+                }).toList(),
               ],
             ),
           ),
@@ -480,7 +485,7 @@ class _BudgetScreenState extends State<BudgetScreen> with TickerProviderStateMix
   Future<void> _saveBudget() async {
     final languageProvider = Provider.of<LanguageProvider>(context, listen: false);
     final budgetProvider = Provider.of<BudgetProvider>(context, listen: false);
-    final categories = CategoryService.getDefaultCategories();
+    final categoryProvider = Provider.of<CategoryProvider>(context, listen: false);
     
     try {
       final budgetItems = _controllers.entries.map((entry) {

@@ -153,6 +153,7 @@ class LanguageProvider extends ChangeNotifier {
     'category_entertainment': 'Loisirs',
     'category_health': 'Santé',
     'category_home': 'Maison',
+    'category_other': 'Autre',
     'general_info': 'Informations générales',
     'summary': 'Résumé',
     'notes_optional': 'Notes (optionnel)',
@@ -173,6 +174,7 @@ class LanguageProvider extends ChangeNotifier {
     'notes': 'Notes',
     'edit_receipt': 'Modifier la facture',
     'receipt_not_found': 'Facture non trouvée',
+    'manage_categories': 'Gérer les catégories',
   };
 
   static const Map<String, String> _englishTranslations = {
@@ -279,6 +281,7 @@ class LanguageProvider extends ChangeNotifier {
     'category_entertainment': 'Entertainment',
     'category_health': 'Health',
     'category_home': 'Home',
+    'category_other': 'Other',
     'general_info': 'General Information',
     'summary': 'Summary',
     'notes_optional': 'Notes (optional)',
@@ -299,5 +302,6 @@ class LanguageProvider extends ChangeNotifier {
     'notes': 'Notes',
     'edit_receipt': 'Edit Receipt',
     'receipt_not_found': 'Receipt not found',
+    'manage_categories': 'Manage Categories',
   };
 }

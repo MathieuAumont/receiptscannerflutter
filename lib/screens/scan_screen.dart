@@ -29,6 +29,7 @@ class _ScanScreenState extends State<ScanScreen> {
   bool _isInitialized = false;
   bool _isAnalyzing = false;
   String? _error;
+  bool _isFlashOn = false;
 
   @override
   void initState() {
@@ -218,6 +219,13 @@ class _ScanScreenState extends State<ScanScreen> {
     }
   }
 
+  void _toggleFlash() {
+    setState(() {
+      _isFlashOn = !_isFlashOn;
+      _controller?.setFlashMode(_isFlashOn ? FlashMode.torch : FlashMode.off);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final languageProvider = Provider.of<LanguageProvider>(context);
@@ -317,81 +325,64 @@ class _ScanScreenState extends State<ScanScreen> {
             ),
           
           // Controls
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              padding: const EdgeInsets.all(AppTheme.spacingXXL),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(AppTheme.spacingL),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Gallery Button
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.black54,
-                      borderRadius: BorderRadius.circular(25),
-                    ),
-                    child: IconButton(
-                      onPressed: _isAnalyzing ? null : _pickImage,
-                      icon: const Icon(
-                        LucideIcons.image,
-                        color: Colors.white,
-                        size: 24,
-                      ),
-                    ),
+                  // Back button
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back, color: Colors.white),
+                    onPressed: () => context.go('/'),
                   ),
                   
-                  // Capture Button
-                  GestureDetector(
-                    onTap: _isAnalyzing ? null : _takePicture,
-                    child: Container(
-                      width: 70,
-                      height: 70,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: Colors.grey[300]!,
-                          width: 4,
+                  const Spacer(),
+                  
+                  // Bottom controls
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      // Flash toggle
+                      IconButton(
+                        icon: Icon(
+                          _isFlashOn ? Icons.flash_on : Icons.flash_off,
+                          color: Colors.white,
+                        ),
+                        onPressed: _toggleFlash,
+                      ),
+                      
+                      // Capture button
+                      GestureDetector(
+                        onTap: _takePicture,
+                        child: Container(
+                          width: 72,
+                          height: 72,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: Colors.white,
+                              width: 4,
+                            ),
+                          ),
+                          child: Container(
+                            margin: const EdgeInsets.all(4),
+                            decoration: const BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
                         ),
                       ),
-                      child: _isAnalyzing
-                          ? const Center(
-                              child: SizedBox(
-                                width: 24,
-                                height: 24,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              ),
-                            )
-                          : null,
-                    ),
+                      
+                      // Gallery picker
+                      IconButton(
+                        icon: const Icon(Icons.photo_library, color: Colors.white),
+                        onPressed: _pickImage,
+                      ),
+                    ],
                   ),
-                  
-                  // Placeholder for symmetry
-                  const SizedBox(width: 48),
                 ],
-              ),
-            ),
-          ),
-          
-          // Back Button
-          Positioned(
-            top: MediaQuery.of(context).padding.top + AppTheme.spacingM,
-            left: AppTheme.spacingM,
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.black54,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: IconButton(
-                onPressed: () => context.go('/home'),
-                icon: const Icon(
-                  LucideIcons.arrowLeft,
-                  color: Colors.white,
-                ),
               ),
             ),
           ),

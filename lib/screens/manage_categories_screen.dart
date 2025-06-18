@@ -4,6 +4,7 @@ import 'package:receipt_scanner_flutter/providers/category_provider.dart';
 import 'package:receipt_scanner_flutter/models/category.dart';
 import 'package:receipt_scanner_flutter/theme/app_theme.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
+import 'package:receipt_scanner_flutter/providers/language_provider.dart';
 
 class ManageCategoriesScreen extends StatefulWidget {
   @override
@@ -30,10 +31,11 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
   @override
   Widget build(BuildContext context) {
     final categoryProvider = Provider.of<CategoryProvider>(context);
+    final languageProvider = Provider.of<LanguageProvider>(context);
     final categories = categoryProvider.categories;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Gérer les catégories')),
+      appBar: AppBar(title: Text(languageProvider.translate('manage_categories'))),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
