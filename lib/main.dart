@@ -8,6 +8,7 @@ import 'package:receipt_scanner_flutter/providers/language_provider.dart';
 import 'package:receipt_scanner_flutter/providers/receipt_provider.dart';
 import 'package:receipt_scanner_flutter/providers/budget_provider.dart';
 import 'package:receipt_scanner_flutter/providers/category_provider.dart';
+import 'package:receipt_scanner_flutter/providers/flinks_provider.dart';
 import 'package:receipt_scanner_flutter/screens/main_navigation_screen.dart';
 import 'package:receipt_scanner_flutter/screens/receipt_details_screen.dart';
 import 'package:receipt_scanner_flutter/screens/analysis_screen.dart';
@@ -18,6 +19,7 @@ import 'package:receipt_scanner_flutter/screens/manual_entry_screen.dart';
 import 'package:receipt_scanner_flutter/screens/budget_screen.dart';
 import 'package:receipt_scanner_flutter/screens/reports_screen.dart';
 import 'package:receipt_scanner_flutter/screens/settings_screen.dart';
+import 'package:receipt_scanner_flutter/screens/bank_connection_screen.dart';
 import 'package:receipt_scanner_flutter/models/receipt.dart';
 
 void main() async {
@@ -45,6 +47,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => ReceiptProvider()),
         ChangeNotifierProvider(create: (_) => BudgetProvider()),
         ChangeNotifierProvider(create: (_) => CategoryProvider()),
+        ChangeNotifierProvider(create: (_) => FlinksProvider()),
       ],
       child: Consumer2<ThemeProvider, LanguageProvider>(
         builder: (context, themeProvider, languageProvider, child) {
@@ -110,6 +113,10 @@ final GoRouter _router = GoRouter(
     GoRoute(
       path: '/custom-report',
       builder: (context, state) => const CustomReportScreen(),
+    ),
+    GoRoute(
+      path: '/bank-connection',
+      builder: (context, state) => const BankConnectionScreen(),
     ),
   ],
 );

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:receipt_scanner_flutter/theme/app_theme.dart';
 import 'package:receipt_scanner_flutter/providers/theme_provider.dart';
 import 'package:receipt_scanner_flutter/providers/language_provider.dart';
 import 'package:receipt_scanner_flutter/providers/receipt_provider.dart';
+import 'package:receipt_scanner_flutter/providers/flinks_provider.dart';
 import 'package:receipt_scanner_flutter/widgets/modern_app_bar.dart';
 import 'package:receipt_scanner_flutter/widgets/modern_card.dart';
 import 'package:receipt_scanner_flutter/services/storage_service.dart';
@@ -23,6 +25,7 @@ class SettingsScreen extends StatelessWidget {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final languageProvider = Provider.of<LanguageProvider>(context);
     final receiptProvider = Provider.of<ReceiptProvider>(context);
+    final flinksProvider = Provider.of<FlinksProvider>(context);
 
     return Scaffold(
       appBar: PreferredSize(
@@ -122,6 +125,74 @@ class SettingsScreen extends StatelessWidget {
                         ),
                       );
                     },
+                  ),
+                ],
+              ),
+            ),
+            
+            const SizedBox(height: AppTheme.spacingL),
+            
+            // Banking Section
+            _buildSectionHeader(context, 'Banque'),
+            
+            ModernCard(
+              child: Column(
+                children: [
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Container(
+                      padding: const EdgeInsets.all(AppTheme.spacingS),
+                      decoration: BoxDecoration(
+                        color: flinksProvider.isConnected 
+                            ? AppTheme.successColor.withOpacity(0.1)
+                            : AppTheme.primaryColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                      ),
+                      child: Icon(
+                        Icons.account_balance,
+                        color: flinksProvider.isConnected 
+                            ? AppTheme.successColor
+                            : AppTheme.primaryColor,
+                      ),
+                    ),
+                    title: Text('Connexion bancaire'),
+                    subtitle: Text(
+                      flinksProvider.isConnected 
+                          ? 'Connecté - Synchronisation automatique active'
+                          : 'Non connecté - Connectez votre banque pour importer automatiquement vos transactions',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: flinksProvider.isConnected 
+                            ? AppTheme.successColor
+                            : AppTheme.textSecondary,
+                      ),
+                    ),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (flinksProvider.isConnected)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppTheme.successColor.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              'Connecté',
+                              style: TextStyle(
+                                color: AppTheme.successColor,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        const SizedBox(width: 8),
+                        const Icon(Icons.arrow_forward_ios, size: 16),
+                      ],
+                    ),
+                    onTap: () => context.go('/bank-connection'),
                   ),
                 ],
               ),
