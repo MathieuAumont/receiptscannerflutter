@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:receipt_scanner_flutter/providers/flinks_provider.dart';
+import 'package:receipt_scanner_flutter/providers/plaid_provider.dart';
 import 'package:receipt_scanner_flutter/providers/language_provider.dart';
 import 'package:receipt_scanner_flutter/providers/receipt_provider.dart';
 import 'package:receipt_scanner_flutter/theme/app_theme.dart';
 import 'package:receipt_scanner_flutter/widgets/modern_app_bar.dart';
 import 'package:receipt_scanner_flutter/widgets/modern_card.dart';
-import 'package:receipt_scanner_flutter/screens/flinks_connection_screen.dart';
+import 'package:receipt_scanner_flutter/screens/plaid_link_screen.dart';
 
 class BankConnectionScreen extends StatefulWidget {
   const BankConnectionScreen({super.key});
@@ -20,9 +20,9 @@ class _BankConnectionScreenState extends State<BankConnectionScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final flinksProvider = Provider.of<FlinksProvider>(context, listen: false);
-      if (flinksProvider.isConnected) {
-        flinksProvider.loadConnectedAccounts();
+      final plaidProvider = Provider.of<PlaidProvider>(context, listen: false);
+      if (plaidProvider.isConnected) {
+        plaidProvider.loadConnectedAccounts();
       }
     });
   }
@@ -30,7 +30,7 @@ class _BankConnectionScreenState extends State<BankConnectionScreen> {
   @override
   Widget build(BuildContext context) {
     final languageProvider = Provider.of<LanguageProvider>(context);
-    final flinksProvider = Provider.of<FlinksProvider>(context);
+    final plaidProvider = Provider.of<PlaidProvider>(context);
     final receiptProvider = Provider.of<ReceiptProvider>(context);
 
     return Scaffold(
@@ -46,7 +46,7 @@ class _BankConnectionScreenState extends State<BankConnectionScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // En-tête explicatif
+            // En-tête explicatif avec Plaid
             ModernCard(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -63,18 +63,44 @@ class _BankConnectionScreenState extends State<BankConnectionScreen> {
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: Text(
-                          'Synchronisation bancaire',
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Synchronisation bancaire',
+                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                const Text('Powered by ', style: TextStyle(fontSize: 12)),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF00D4AA),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: const Text(
+                                    'Plaid',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: AppTheme.spacingM),
                   Text(
-                    'Connectez votre compte bancaire pour importer automatiquement vos transactions et créer des reçus.',
+                    'Connectez votre compte bancaire pour importer automatiquement vos transactions et créer des reçus. Plaid connecte plus de 12,000 institutions financières.',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: AppTheme.textSecondary,
                     ),
@@ -99,7 +125,7 @@ class _BankConnectionScreenState extends State<BankConnectionScreen> {
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            'Vos informations bancaires sont sécurisées et chiffrées.',
+                            'Sécurité bancaire de niveau institutionnel. Vos identifiants ne sont jamais stockés.',
                             style: TextStyle(
                               color: AppTheme.infoColor,
                               fontSize: 12,
@@ -117,14 +143,19 @@ class _BankConnectionScreenState extends State<BankConnectionScreen> {
             const SizedBox(height: AppTheme.spacingM),
 
             // État de la connexion
-            if (!flinksProvider.isConnected) ...[
+            if (!plaidProvider.isConnected) ...[
               ModernCard(
                 child: Column(
                   children: [
                     Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: AppTheme.textTertiary.withOpacity(0.1),
+                        gradient: LinearGradient(
+                          colors: [
+                            AppTheme.textTertiary.withOpacity(0.1),
+                            AppTheme.textTertiary.withOpacity(0.05),
+                          ],
+                        ),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
@@ -142,7 +173,7 @@ class _BankConnectionScreenState extends State<BankConnectionScreen> {
                     ),
                     const SizedBox(height: AppTheme.spacingS),
                     Text(
-                      'Connectez votre banque pour commencer la synchronisation automatique.',
+                      'Connectez votre banque pour commencer la synchronisation automatique de vos transactions.',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: AppTheme.textSecondary,
                       ),
@@ -151,25 +182,41 @@ class _BankConnectionScreenState extends State<BankConnectionScreen> {
                     const SizedBox(height: AppTheme.spacingL),
                     SizedBox(
                       width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: flinksProvider.isConnecting ? null : _connectBank,
-                        icon: flinksProvider.isConnecting
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : const Icon(Icons.add_link),
-                        label: Text(
-                          flinksProvider.isConnecting
-                              ? 'Connexion en cours...'
-                              : 'Connecter ma banque',
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: AppTheme.primaryGradient,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppTheme.primaryColor.withOpacity(0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
                         ),
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.all(AppTheme.spacingM),
+                        child: ElevatedButton.icon(
+                          onPressed: plaidProvider.isConnecting ? null : _connectBank,
+                          icon: plaidProvider.isConnecting
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Icon(Icons.add_link, color: Colors.white),
+                          label: Text(
+                            plaidProvider.isConnecting
+                                ? 'Connexion en cours...'
+                                : 'Connecter avec Plaid',
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.transparent,
+                            shadowColor: Colors.transparent,
+                            padding: const EdgeInsets.all(AppTheme.spacingM),
+                          ),
                         ),
                       ),
                     ),
@@ -220,7 +267,7 @@ class _BankConnectionScreenState extends State<BankConnectionScreen> {
                       ],
                     ),
                     const SizedBox(height: AppTheme.spacingM),
-                    ...flinksProvider.connectedAccounts.map((account) {
+                    ...plaidProvider.connectedAccounts.map((account) {
                       return Container(
                         margin: const EdgeInsets.only(bottom: 8),
                         padding: const EdgeInsets.all(12),
@@ -244,19 +291,37 @@ class _BankConnectionScreenState extends State<BankConnectionScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    account['institutionName'] ?? 'Banque',
+                                    account['institution_name'] ?? 'Banque',
                                     style: const TextStyle(
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
                                   Text(
-                                    account['accountNumber'] ?? 'Compte',
+                                    '${account['name']} (${account['subtype']})',
                                     style: TextStyle(
                                       color: AppTheme.textSecondary,
                                       fontSize: 12,
                                     ),
                                   ),
                                 ],
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppTheme.successColor.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                'Actif',
+                                style: TextStyle(
+                                  color: AppTheme.successColor,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ),
                           ],
@@ -281,7 +346,7 @@ class _BankConnectionScreenState extends State<BankConnectionScreen> {
                       ),
                     ),
                     const SizedBox(height: AppTheme.spacingM),
-                    if (flinksProvider.lastSyncDate != null) ...[
+                    if (plaidProvider.lastSyncDate != null) ...[
                       Row(
                         children: [
                           Icon(
@@ -291,7 +356,7 @@ class _BankConnectionScreenState extends State<BankConnectionScreen> {
                           ),
                           const SizedBox(width: 8),
                           Text(
-                            'Dernière sync: ${_formatDate(flinksProvider.lastSyncDate!)}',
+                            'Dernière sync: ${_formatDate(plaidProvider.lastSyncDate!)}',
                             style: TextStyle(
                               color: AppTheme.textSecondary,
                               fontSize: 12,
@@ -301,31 +366,45 @@ class _BankConnectionScreenState extends State<BankConnectionScreen> {
                       ),
                       const SizedBox(height: AppTheme.spacingM),
                     ],
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: flinksProvider.isSyncing
-                            ? null
-                            : () => flinksProvider.syncTransactions(receiptProvider),
-                        icon: flinksProvider.isSyncing
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : const Icon(Icons.sync),
-                        label: Text(
-                          flinksProvider.isSyncing
-                              ? 'Synchronisation...'
-                              : 'Synchroniser maintenant',
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: plaidProvider.isSyncing
+                                ? null
+                                : () => plaidProvider.syncTransactions(receiptProvider),
+                            icon: plaidProvider.isSyncing
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : const Icon(Icons.sync),
+                            label: Text(
+                              plaidProvider.isSyncing
+                                  ? 'Synchronisation...'
+                                  : 'Sync maintenant',
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.all(AppTheme.spacingM),
+                            ),
+                          ),
                         ),
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.all(AppTheme.spacingM),
+                        const SizedBox(width: 8),
+                        OutlinedButton.icon(
+                          onPressed: plaidProvider.isSyncing
+                              ? null
+                              : () => _showSyncOptionsDialog(receiptProvider),
+                          icon: const Icon(Icons.date_range, size: 16),
+                          label: const Text('Options'),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.all(AppTheme.spacingM),
+                          ),
                         ),
-                      ),
+                      ],
                     ),
                   ],
                 ),
@@ -333,7 +412,7 @@ class _BankConnectionScreenState extends State<BankConnectionScreen> {
             ],
 
             // Erreurs
-            if (flinksProvider.error != null) ...[
+            if (plaidProvider.error != null) ...[
               const SizedBox(height: AppTheme.spacingM),
               ModernCard(
                 child: Container(
@@ -355,7 +434,7 @@ class _BankConnectionScreenState extends State<BankConnectionScreen> {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          flinksProvider.error!,
+                          plaidProvider.error!,
                           style: TextStyle(
                             color: AppTheme.errorColor,
                             fontSize: 12,
@@ -363,7 +442,7 @@ class _BankConnectionScreenState extends State<BankConnectionScreen> {
                         ),
                       ),
                       IconButton(
-                        onPressed: flinksProvider.clearError,
+                        onPressed: plaidProvider.clearError,
                         icon: Icon(
                           Icons.close,
                           color: AppTheme.errorColor,
@@ -375,6 +454,63 @@ class _BankConnectionScreenState extends State<BankConnectionScreen> {
                 ),
               ),
             ],
+
+            // Informations sur Plaid
+            const SizedBox(height: AppTheme.spacingM),
+            ModernCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'À propos de Plaid',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: AppTheme.spacingS),
+                  Text(
+                    'Plaid est utilisé par des milliers d\'applications financières pour connecter en toute sécurité les comptes bancaires. Vos identifiants bancaires ne sont jamais stockés et toutes les connexions sont chiffrées.',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppTheme.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: AppTheme.spacingS),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.verified_user,
+                        color: AppTheme.successColor,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Certifié SOC 2 Type II',
+                        style: TextStyle(
+                          color: AppTheme.successColor,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Icon(
+                        Icons.lock,
+                        color: AppTheme.successColor,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Chiffrement 256-bit',
+                        style: TextStyle(
+                          color: AppTheme.successColor,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -382,17 +518,14 @@ class _BankConnectionScreenState extends State<BankConnectionScreen> {
   }
 
   Future<void> _connectBank() async {
-    final flinksProvider = Provider.of<FlinksProvider>(context, listen: false);
+    final plaidProvider = Provider.of<PlaidProvider>(context, listen: false);
     
-    final loginUrl = await flinksProvider.initiateConnection();
+    final linkToken = await plaidProvider.createLinkToken();
     
-    if (loginUrl != null && mounted) {
+    if (linkToken != null && mounted) {
       final result = await Navigator.of(context).push<bool>(
         MaterialPageRoute(
-          builder: (context) => FlinksConnectionScreen(
-            loginUrl: loginUrl,
-            requestId: 'request_${DateTime.now().millisecondsSinceEpoch}',
-          ),
+          builder: (context) => PlaidLinkScreen(linkToken: linkToken),
         ),
       );
       
@@ -411,7 +544,7 @@ class _BankConnectionScreenState extends State<BankConnectionScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Déconnecter la banque'),
+        title: const Text('Déconnecter Plaid'),
         content: const Text(
           'Êtes-vous sûr de vouloir déconnecter votre compte bancaire ? '
           'La synchronisation automatique sera désactivée.',
@@ -424,8 +557,8 @@ class _BankConnectionScreenState extends State<BankConnectionScreen> {
           TextButton(
             onPressed: () async {
               Navigator.of(context).pop();
-              final flinksProvider = Provider.of<FlinksProvider>(context, listen: false);
-              await flinksProvider.disconnectAll();
+              final plaidProvider = Provider.of<PlaidProvider>(context, listen: false);
+              await plaidProvider.disconnectAll();
               
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -442,6 +575,56 @@ class _BankConnectionScreenState extends State<BankConnectionScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  void _showSyncOptionsDialog(ReceiptProvider receiptProvider) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Options de synchronisation'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.today),
+              title: const Text('Dernières 24h'),
+              onTap: () {
+                Navigator.of(context).pop();
+                _syncWithDateRange(receiptProvider, 1);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.date_range),
+              title: const Text('Derniers 7 jours'),
+              onTap: () {
+                Navigator.of(context).pop();
+                _syncWithDateRange(receiptProvider, 7);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.calendar_month),
+              title: const Text('Dernier mois'),
+              onTap: () {
+                Navigator.of(context).pop();
+                _syncWithDateRange(receiptProvider, 30);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _syncWithDateRange(ReceiptProvider receiptProvider, int days) {
+    final plaidProvider = Provider.of<PlaidProvider>(context, listen: false);
+    final endDate = DateTime.now();
+    final startDate = endDate.subtract(Duration(days: days));
+    
+    plaidProvider.syncTransactions(
+      receiptProvider,
+      startDate: startDate,
+      endDate: endDate,
     );
   }
 

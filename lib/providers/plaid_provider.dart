@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:receipt_scanner_flutter/services/flinks_service.dart';
+import 'package:receipt_scanner_flutter/services/plaid_service.dart';
 import 'package:receipt_scanner_flutter/providers/receipt_provider.dart';
 import 'package:receipt_scanner_flutter/models/receipt.dart';
 import 'dart:convert';
 
-class FlinksProvider extends ChangeNotifier {
+class PlaidProvider extends ChangeNotifier {
   bool _isConnected = false;
   bool _isConnecting = false;
   bool _isSyncing = false;
   List<Map<String, dynamic>> _connectedAccounts = [];
   String? _lastSyncDate;
   String? _error;
+  String? _linkToken;
 
   bool get isConnected => _isConnected;
   bool get isConnecting => _isConnecting;
@@ -19,18 +20,19 @@ class FlinksProvider extends ChangeNotifier {
   List<Map<String, dynamic>> get connectedAccounts => _connectedAccounts;
   String? get lastSyncDate => _lastSyncDate;
   String? get error => _error;
+  String? get linkToken => _linkToken;
 
-  FlinksProvider() {
+  PlaidProvider() {
     _loadConnectionStatus();
   }
 
   Future<void> _loadConnectionStatus() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      _isConnected = prefs.getBool('flinks_connected') ?? false;
-      _lastSyncDate = prefs.getString('flinks_last_sync');
+      _isConnected = prefs.getBool('plaid_connected') ?? false;
+      _lastSyncDate = prefs.getString('plaid_last_sync');
       
-      final accountsJson = prefs.getString('flinks_accounts');
+      final accountsJson = prefs.getString('plaid_accounts');
       if (accountsJson != null) {
         _connectedAccounts = List<Map<String, dynamic>>.from(
           jsonDecode(accountsJson)
@@ -39,35 +41,39 @@ class FlinksProvider extends ChangeNotifier {
       
       notifyListeners();
     } catch (e) {
-      debugPrint('Error loading Flinks connection status: $e');
+      debugPrint('Error loading Plaid connection status: $e');
     }
   }
 
   Future<void> _saveConnectionStatus() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('flinks_connected', _isConnected);
+      await prefs.setBool('plaid_connected', _isConnected);
       if (_lastSyncDate != null) {
-        await prefs.setString('flinks_last_sync', _lastSyncDate!);
+        await prefs.setString('plaid_last_sync', _lastSyncDate!);
       }
-      await prefs.setString('flinks_accounts', jsonEncode(_connectedAccounts));
+      await prefs.setString('plaid_accounts', jsonEncode(_connectedAccounts));
     } catch (e) {
-      debugPrint('Error saving Flinks connection status: $e');
+      debugPrint('Error saving Plaid connection status: $e');
     }
   }
 
-  Future<String?> initiateConnection() async {
+  Future<String?> createLinkToken() async {
     _isConnecting = true;
     _error = null;
     notifyListeners();
 
     try {
-      final result = await FlinksService.initiateConnection();
+      // Générer un ID utilisateur unique (vous pouvez utiliser l'ID de votre système d'auth)
+      final userId = 'user_${DateTime.now().millisecondsSinceEpoch}';
+      
+      final result = await PlaidService.createLinkToken(userId);
       
       if (result['success'] == true) {
-        return result['loginUrl']; // URL pour la connexion Flinks
+        _linkToken = result['link_token'];
+        return _linkToken;
       } else {
-        _error = result['message'] ?? 'Erreur lors de l\'initiation de la connexion';
+        _error = result['message'] ?? 'Erreur lors de la création du token';
         return null;
       }
     } catch (e) {
@@ -79,20 +85,21 @@ class FlinksProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> checkConnectionStatus(String requestId) async {
+  Future<bool> exchangePublicToken(String publicToken) async {
     try {
-      final result = await FlinksService.checkConnectionStatus(requestId);
+      final result = await PlaidService.exchangePublicToken(publicToken);
       
-      if (result['connected'] == true) {
+      if (result['success'] == true) {
         _isConnected = true;
         await loadConnectedAccounts();
         await _saveConnectionStatus();
         return true;
+      } else {
+        _error = result['message'] ?? 'Erreur lors de l\'échange du token';
+        return false;
       }
-      
-      return false;
     } catch (e) {
-      _error = 'Erreur lors de la vérification: $e';
+      _error = 'Erreur lors de l\'échange du token: $e';
       notifyListeners();
       return false;
     }
@@ -100,7 +107,7 @@ class FlinksProvider extends ChangeNotifier {
 
   Future<void> loadConnectedAccounts() async {
     try {
-      _connectedAccounts = await FlinksService.getConnectedAccounts();
+      _connectedAccounts = await PlaidService.getAccounts();
       await _saveConnectionStatus();
       notifyListeners();
     } catch (e) {
@@ -109,7 +116,10 @@ class FlinksProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> syncTransactions(ReceiptProvider receiptProvider) async {
+  Future<void> syncTransactions(ReceiptProvider receiptProvider, {
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
     if (!_isConnected) return;
 
     _isSyncing = true;
@@ -117,12 +127,22 @@ class FlinksProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final transactions = await FlinksService.syncTransactions();
+      final transactions = await PlaidService.syncTransactions(
+        startDate: startDate,
+        endDate: endDate,
+      );
+      
+      int importedCount = 0;
       
       for (final transaction in transactions) {
+        // Vérifier si c'est une transaction d'achat valide
+        if (!PlaidService.isValidPurchaseTransaction(transaction)) {
+          continue;
+        }
+        
         // Vérifier si la transaction n'existe pas déjà
         final existingReceipt = receiptProvider.receipts.firstWhere(
-          (receipt) => receipt.metadata?.originalText == transaction['id'],
+          (receipt) => receipt.metadata?.originalText == transaction['transaction_id'],
           orElse: () => Receipt(
             id: '',
             company: '',
@@ -137,14 +157,19 @@ class FlinksProvider extends ChangeNotifier {
 
         if (existingReceipt.id.isEmpty) {
           // Créer un nouveau reçu à partir de la transaction
-          final receiptData = FlinksService.transactionToReceiptData(transaction);
+          final receiptData = PlaidService.transactionToReceiptData(transaction);
           final receipt = Receipt.fromJson(receiptData);
           await receiptProvider.addReceipt(receipt);
+          importedCount++;
         }
       }
 
       _lastSyncDate = DateTime.now().toIso8601String();
       await _saveConnectionStatus();
+      
+      if (importedCount > 0) {
+        _error = null; // Clear any previous errors on successful sync
+      }
       
     } catch (e) {
       _error = 'Erreur lors de la synchronisation: $e';
@@ -154,12 +179,12 @@ class FlinksProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> disconnectAccount(String accountId) async {
+  Future<void> removeItem(String itemId) async {
     try {
-      final success = await FlinksService.disconnectAccount(accountId);
+      final success = await PlaidService.removeItem(itemId);
       
       if (success) {
-        _connectedAccounts.removeWhere((account) => account['id'] == accountId);
+        _connectedAccounts.removeWhere((account) => account['item_id'] == itemId);
         
         if (_connectedAccounts.isEmpty) {
           _isConnected = false;
@@ -177,18 +202,25 @@ class FlinksProvider extends ChangeNotifier {
 
   Future<void> disconnectAll() async {
     try {
-      for (final account in _connectedAccounts) {
-        await FlinksService.disconnectAccount(account['id']);
+      // Récupérer tous les item_ids uniques
+      final itemIds = _connectedAccounts
+          .map((account) => account['item_id'])
+          .toSet()
+          .cast<String>();
+      
+      for (final itemId in itemIds) {
+        await PlaidService.removeItem(itemId);
       }
       
       _isConnected = false;
       _connectedAccounts.clear();
       _lastSyncDate = null;
+      _linkToken = null;
       
       final prefs = await SharedPreferences.getInstance();
-      await prefs.remove('flinks_connected');
-      await prefs.remove('flinks_last_sync');
-      await prefs.remove('flinks_accounts');
+      await prefs.remove('plaid_connected');
+      await prefs.remove('plaid_last_sync');
+      await prefs.remove('plaid_accounts');
       
       notifyListeners();
     } catch (e) {
@@ -200,5 +232,16 @@ class FlinksProvider extends ChangeNotifier {
   void clearError() {
     _error = null;
     notifyListeners();
+  }
+
+  // Synchronisation automatique périodique
+  Future<void> autoSync(ReceiptProvider receiptProvider) async {
+    if (!_isConnected || _isSyncing) return;
+    
+    // Synchroniser seulement les 7 derniers jours pour éviter les doublons
+    final endDate = DateTime.now();
+    final startDate = endDate.subtract(const Duration(days: 7));
+    
+    await syncTransactions(receiptProvider, startDate: startDate, endDate: endDate);
   }
 }

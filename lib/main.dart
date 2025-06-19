@@ -8,7 +8,7 @@ import 'package:receipt_scanner_flutter/providers/language_provider.dart';
 import 'package:receipt_scanner_flutter/providers/receipt_provider.dart';
 import 'package:receipt_scanner_flutter/providers/budget_provider.dart';
 import 'package:receipt_scanner_flutter/providers/category_provider.dart';
-import 'package:receipt_scanner_flutter/providers/flinks_provider.dart';
+import 'package:receipt_scanner_flutter/providers/plaid_provider.dart';
 import 'package:receipt_scanner_flutter/screens/main_navigation_screen.dart';
 import 'package:receipt_scanner_flutter/screens/receipt_details_screen.dart';
 import 'package:receipt_scanner_flutter/screens/analysis_screen.dart';
@@ -47,7 +47,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => ReceiptProvider()),
         ChangeNotifierProvider(create: (_) => BudgetProvider()),
         ChangeNotifierProvider(create: (_) => CategoryProvider()),
-        ChangeNotifierProvider(create: (_) => FlinksProvider()),
+        ChangeNotifierProvider(create: (_) => PlaidProvider()),
       ],
       child: Consumer2<ThemeProvider, LanguageProvider>(
         builder: (context, themeProvider, languageProvider, child) {

@@ -6,7 +6,7 @@ import 'package:receipt_scanner_flutter/theme/app_theme.dart';
 import 'package:receipt_scanner_flutter/providers/theme_provider.dart';
 import 'package:receipt_scanner_flutter/providers/language_provider.dart';
 import 'package:receipt_scanner_flutter/providers/receipt_provider.dart';
-import 'package:receipt_scanner_flutter/providers/flinks_provider.dart';
+import 'package:receipt_scanner_flutter/providers/plaid_provider.dart';
 import 'package:receipt_scanner_flutter/widgets/modern_app_bar.dart';
 import 'package:receipt_scanner_flutter/widgets/modern_card.dart';
 import 'package:receipt_scanner_flutter/services/storage_service.dart';
@@ -25,7 +25,7 @@ class SettingsScreen extends StatelessWidget {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final languageProvider = Provider.of<LanguageProvider>(context);
     final receiptProvider = Provider.of<ReceiptProvider>(context);
-    final flinksProvider = Provider.of<FlinksProvider>(context);
+    final plaidProvider = Provider.of<PlaidProvider>(context);
 
     return Scaffold(
       appBar: PreferredSize(
@@ -143,25 +143,25 @@ class SettingsScreen extends StatelessWidget {
                     leading: Container(
                       padding: const EdgeInsets.all(AppTheme.spacingS),
                       decoration: BoxDecoration(
-                        color: flinksProvider.isConnected 
+                        color: plaidProvider.isConnected 
                             ? AppTheme.successColor.withOpacity(0.1)
                             : AppTheme.primaryColor.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
                       ),
                       child: Icon(
                         Icons.account_balance,
-                        color: flinksProvider.isConnected 
+                        color: plaidProvider.isConnected 
                             ? AppTheme.successColor
                             : AppTheme.primaryColor,
                       ),
                     ),
                     title: Text('Connexion bancaire'),
                     subtitle: Text(
-                      flinksProvider.isConnected 
+                      plaidProvider.isConnected 
                           ? 'Connecté - Synchronisation automatique active'
                           : 'Non connecté - Connectez votre banque pour importer automatiquement vos transactions',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: flinksProvider.isConnected 
+                        color: plaidProvider.isConnected 
                             ? AppTheme.successColor
                             : AppTheme.textSecondary,
                       ),
@@ -169,7 +169,7 @@ class SettingsScreen extends StatelessWidget {
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        if (flinksProvider.isConnected)
+                        if (plaidProvider.isConnected)
                           Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 8,
